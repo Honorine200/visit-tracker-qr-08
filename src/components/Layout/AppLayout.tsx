@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
-import { Home, QrCode, Clock, User } from 'lucide-react';
+import { Home, QrCode, Clock, User, FileText, BarChart3 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 interface NavItemProps {
@@ -48,13 +48,13 @@ const AppLayout: React.FC = () => {
       </main>
       
       <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-lg backdrop-blur-sm bg-white/90 dark:bg-gray-900/90 z-50">
-        <div className="max-w-lg mx-auto px-4 py-2">
-          <div className="flex justify-around items-center">
+        <div className="max-w-lg mx-auto px-2 py-2">
+          <div className="grid grid-cols-6 gap-1">
             <NavItem 
               to="/dashboard" 
               label="Accueil" 
               icon={<Home className={cn(pathname === '/dashboard' ? "text-bisko-500" : "")} />}
-              isActive={pathname === '/dashboard'}
+              isActive={pathname === '/dashboard' || pathname === '/'}
             />
             <NavItem 
               to="/scanner" 
@@ -67,6 +67,18 @@ const AppLayout: React.FC = () => {
               label="Visites" 
               icon={<Clock className={cn(pathname === '/visits' ? "text-bisko-500" : "")} />} 
               isActive={pathname === '/visits'}
+            />
+            <NavItem 
+              to="/billing" 
+              label="Factures" 
+              icon={<FileText className={cn(pathname === '/billing' ? "text-bisko-500" : "")} />}
+              isActive={pathname === '/billing'}
+            />
+            <NavItem 
+              to="/reports" 
+              label="Rapports" 
+              icon={<BarChart3 className={cn(pathname === '/reports' ? "text-bisko-500" : "")} />}
+              isActive={pathname === '/reports'}
             />
             <NavItem 
               to="/profile" 

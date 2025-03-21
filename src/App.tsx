@@ -9,6 +9,8 @@ import Dashboard from "./pages/Dashboard";
 import Scanner from "./pages/Scanner";
 import Visits from "./pages/Visits";
 import Profile from "./pages/Profile";
+import Billing from "./pages/Billing";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 import AppLayout from "./components/Layout/AppLayout";
 
@@ -27,6 +29,8 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/scanner" element={<Scanner />} />
             <Route path="/visits" element={<Visits />} />
+            <Route path="/billing" element={<Billing />} />
+            <Route path="/reports" element={<Reports />} />
             <Route path="/profile" element={<Profile />} />
           </Route>
           <Route path="*" element={<NotFound />} />
