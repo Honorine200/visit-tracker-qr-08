@@ -19,15 +19,27 @@ const LoginForm: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     
+    // Extraire le nom d'utilisateur de l'adresse Gmail
+    let userName = 'Utilisateur Démo';
+    if (email.endsWith('@gmail.com')) {
+      // Prend la partie avant @gmail.com et remplace les points par des espaces
+      // puis met en majuscule la première lettre de chaque mot
+      userName = email.split('@')[0]
+        .replace(/\./g, ' ')
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    }
+    
     // Simuler une connexion
     setTimeout(() => {
       // Pour l'instant, on accepte n'importe quelles informations
       localStorage.setItem('user', JSON.stringify({ 
         id: '1',
-        name: 'Utilisateur Démo',
+        name: userName,
         email: email,
         role: 'commercial',
-        zone: 'Paris'
+        zone: 'Dakar'
       }));
       
       setIsLoading(false);

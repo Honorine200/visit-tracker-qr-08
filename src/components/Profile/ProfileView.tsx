@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, MapPin, LogOut, Moon, Sun, Award, RefreshCw } from 'lucide-react';
@@ -26,11 +25,9 @@ const ProfileView: React.FC = () => {
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   
   useEffect(() => {
-    // Vérifier si l'utilisateur est en mode sombre
     const isDark = document.documentElement.classList.contains('dark');
     setIsDarkMode(isDark);
     
-    // Récupérer les données utilisateur du localStorage
     const storedUser = localStorage.getItem('user');
     
     if (storedUser) {
@@ -51,7 +48,6 @@ const ProfileView: React.FC = () => {
   };
   
   const handleLogout = () => {
-    // Supprimer les données utilisateur du localStorage
     localStorage.removeItem('user');
     
     toast({
@@ -65,7 +61,6 @@ const ProfileView: React.FC = () => {
   const handleSyncData = () => {
     setSyncStatus('syncing');
     
-    // Simuler une synchronisation
     setTimeout(() => {
       setSyncStatus('success');
       
@@ -74,7 +69,6 @@ const ProfileView: React.FC = () => {
         description: "Toutes vos données ont été synchronisées.",
       });
       
-      // Remettre à l'état idle après quelques secondes
       setTimeout(() => {
         setSyncStatus('idle');
       }, 2000);
