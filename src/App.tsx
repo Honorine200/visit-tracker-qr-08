@@ -11,6 +11,7 @@ import Visits from "./pages/Visits";
 import Profile from "./pages/Profile";
 import Billing from "./pages/Billing";
 import Reports from "./pages/Reports";
+import Stores from "./pages/Stores";
 import NotFound from "./pages/NotFound";
 import AppLayout from "./components/Layout/AppLayout";
 
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/billing" element={<Billing />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/stores" element={<Stores />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

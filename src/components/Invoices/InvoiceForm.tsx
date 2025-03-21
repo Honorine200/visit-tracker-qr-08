@@ -1,19 +1,24 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Plus, FileText, Send } from 'lucide-react';
+import { Trash2, Plus, FileText, Send, Store } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Product, InvoiceItem, PaymentMethod } from '@/types/invoice';
 import { products } from '@/data/products';
+import AddStoreDialog from '@/components/Stores/AddStoreDialog';
 
 interface Store {
   id: string;
   name: string;
   address: string;
+  phone?: string;
+  email?: string;
+  contactName?: string;
+  notes?: string;
+  createdAt: string;
 }
 
 interface InvoiceFormProps {
@@ -26,20 +31,38 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ store, onInvoiceGenerated }) 
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [selectedStore, setSelectedStore] = useState<Store | null>(store || null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
+  const [stores, setStores] = useState<Store[]>([]);
   
-  // Mock stores list for manual selection
-  const stores: Store[] = [
-    { id: 'store1', name: 'Supermarché Excel', address: '123 Rue Centrale, Dakar' },
-    { id: 'store2', name: 'Mini Market Plus', address: '45 Avenue Principale, Dakar' },
-    { id: 'store3', name: 'Market Express', address: '78 Rue du Commerce, Dakar' },
-  ];
+  useEffect(() => {
+    const loadStores = () => {
+      const storedStores = JSON.parse(localStorage.getItem('stores') || '[]');
+      setStores(storedStores);
+    };
+    
+    loadStores();
+    
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'stores') {
+        loadStores();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
-  // If a store is passed as prop (after scanning), use it
   useEffect(() => {
     if (store) {
       setSelectedStore(store);
     }
   }, [store]);
+
+  const handleStoreAdded = (newStore: Store) => {
+    setStores(prevStores => [...prevStores, newStore]);
+    setSelectedStore(newStore);
+  };
 
   const addItem = () => {
     const newItem: InvoiceItem = {
@@ -65,7 +88,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ store, onInvoiceGenerated }) 
       const product = products.find(p => p.id === value);
       if (product) {
         item.product = product;
-        // Recalculate total when product changes
         item.total = calculateItemTotal(product.price, item.quantity, item.discount);
       }
     } else if (field === 'quantity') {
@@ -89,7 +111,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ store, onInvoiceGenerated }) 
   };
 
   const calculateTax = (subtotal: number): number => {
-    // TVA à 18% par exemple
     return subtotal * 0.18;
   };
 
@@ -142,12 +163,10 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ store, onInvoiceGenerated }) 
       description: "La facture a été générée avec succès"
     });
 
-    // Reset form
     setItems([]);
   };
 
   const handleSendInvoice = () => {
-    // Simulate sending
     toast({
       title: "Facture envoyée",
       description: "La facture a été envoyée par email/WhatsApp"
@@ -160,33 +179,48 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ store, onInvoiceGenerated }) 
         <CardTitle className="text-xl font-bold text-bisko-600">Créer une facture</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Store selection */}
         <div className="space-y-2">
-          <Label htmlFor="store">Boutique</Label>
-          <Select
-            value={selectedStore?.id || ''}
-            onValueChange={(value) => {
-              const store = stores.find(s => s.id === value);
-              if (store) setSelectedStore(store);
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionner une boutique" />
-            </SelectTrigger>
-            <SelectContent>
-              {stores.map((store) => (
-                <SelectItem key={store.id} value={store.id}>
-                  {store.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {selectedStore && (
-            <p className="text-sm text-muted-foreground">{selectedStore.address}</p>
+          <div className="flex justify-between items-center">
+            <Label htmlFor="store">Boutique</Label>
+            <AddStoreDialog 
+              onStoreAdded={handleStoreAdded}
+              buttonVariant="ghost"
+              buttonClassName="text-xs"
+            />
+          </div>
+          {stores.length === 0 ? (
+            <div className="text-center py-4 border rounded-md">
+              <Store className="h-8 w-8 mx-auto text-muted-foreground" />
+              <p className="text-sm text-muted-foreground mt-2">Aucune boutique enregistrée</p>
+              <p className="text-xs text-muted-foreground">Ajoutez d'abord une boutique</p>
+            </div>
+          ) : (
+            <>
+              <Select
+                value={selectedStore?.id || ''}
+                onValueChange={(value) => {
+                  const store = stores.find(s => s.id === value);
+                  if (store) setSelectedStore(store);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une boutique" />
+                </SelectTrigger>
+                <SelectContent>
+                  {stores.map((store) => (
+                    <SelectItem key={store.id} value={store.id}>
+                      {store.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedStore && (
+                <p className="text-sm text-muted-foreground">{selectedStore.address}</p>
+              )}
+            </>
           )}
         </div>
 
-        {/* Products list */}
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <Label>Produits</Label>
@@ -278,7 +312,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ store, onInvoiceGenerated }) 
           )}
         </div>
 
-        {/* Totals */}
         {items.length > 0 && (
           <div className="pt-4 space-y-2 border-t">
             <div className="flex justify-between">
@@ -296,7 +329,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ store, onInvoiceGenerated }) 
           </div>
         )}
 
-        {/* Payment method */}
         <div className="space-y-2 pt-2">
           <Label htmlFor="payment">Mode de paiement</Label>
           <Select
