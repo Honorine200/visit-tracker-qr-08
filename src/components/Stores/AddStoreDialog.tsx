@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Store } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,8 +21,8 @@ interface AddStoreDialogProps {
 
 const AddStoreDialog: React.FC<AddStoreDialogProps> = ({ 
   onStoreAdded,
-  buttonVariant = "outline",
-  buttonClassName = "flex items-center gap-1 text-bisko-500" 
+  buttonVariant = "default",
+  buttonClassName = "bg-bisko-500 hover:bg-bisko-600 text-white" 
 }) => {
   const [open, setOpen] = React.useState(false);
   const { toast } = useToast();
@@ -60,12 +60,15 @@ const AddStoreDialog: React.FC<AddStoreDialogProps> = ({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant={buttonVariant} className={buttonClassName} size="sm">
-          <Plus size={16} /> Ajouter une boutique
+          <Plus size={16} className="mr-1" /> Ajouter une boutique
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Ajouter une nouvelle boutique</DialogTitle>
+          <div className="flex items-center gap-2 mb-2">
+            <Store className="h-5 w-5 text-bisko-500" />
+            <DialogTitle>Ajouter une nouvelle boutique</DialogTitle>
+          </div>
           <DialogDescription>
             Remplissez les informations ci-dessous pour ajouter une nouvelle boutique.
           </DialogDescription>
