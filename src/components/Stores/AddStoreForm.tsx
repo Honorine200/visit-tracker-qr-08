@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { DialogFooter } from "@/components/ui/dialog";
-import { MapPin } from 'lucide-react';
+import { MapPin, Locate } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Le nom de la boutique doit contenir au moins 2 caractères." }),
@@ -58,6 +58,61 @@ const AddStoreForm: React.FC<AddStoreFormProps> = ({ onSubmit, onCancel }) => {
 
   const handleSubmit = (values: StoreFormValues) => {
     onSubmit(values);
+  };
+
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: "Erreur",
+        description: "La géolocalisation n'est pas prise en charge par votre navigateur.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Localisation en cours",
+      description: "Veuillez attendre pendant que nous récupérons votre position actuelle...",
+    });
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        // Success callback
+        form.setValue('latitude', position.coords.latitude.toString());
+        form.setValue('longitude', position.coords.longitude.toString());
+        toast({
+          title: "Localisation réussie",
+          description: "Votre position actuelle a été capturée avec succès.",
+        });
+      },
+      (error) => {
+        // Error callback
+        let errorMessage = "Impossible de récupérer votre position.";
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Vous avez refusé l'accès à votre position.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Votre position est indisponible.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "La demande de position a expiré.";
+            break;
+        }
+        
+        toast({
+          title: "Erreur de localisation",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
   };
 
   return (
@@ -170,6 +225,17 @@ const AddStoreForm: React.FC<AddStoreFormProps> = ({ onSubmit, onCancel }) => {
               )}
             />
           </div>
+
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm" 
+            className="w-full flex items-center justify-center gap-2 bg-bisko-50 text-bisko-700 hover:bg-bisko-100"
+            onClick={getCurrentLocation}
+          >
+            <Locate className="h-4 w-4" />
+            Utiliser ma position actuelle
+          </Button>
         </div>
 
         <FormField
