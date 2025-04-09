@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Store } from 'lucide-react';
+import { Store, MapPin } from 'lucide-react';
 import StoresList from '@/components/Stores/StoresList';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -14,9 +14,12 @@ const Stores: React.FC = () => {
       
       <Card className="border-none shadow-md">
         <CardHeader className="bg-bisko-50 dark:bg-bisko-900/30 rounded-t-lg">
-          <CardTitle className="text-xl font-medium text-bisko-700 dark:text-bisko-300">
-            Liste des boutiques
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <MapPin className="h-5 w-5 text-bisko-500" />
+            <CardTitle className="text-xl font-medium text-bisko-700 dark:text-bisko-300">
+              Boutiques & Emplacements
+            </CardTitle>
+          </div>
         </CardHeader>
         <CardContent className="p-4">
           <StoresList />

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Store, Phone, Mail, User, MapPin, Search } from 'lucide-react';
+import { Store, Phone, Mail, User, MapPin, Search, Map } from 'lucide-react';
 import AddStoreDialog from './AddStoreDialog';
 
 interface Store {
@@ -13,6 +13,8 @@ interface Store {
   phone?: string;
   email?: string;
   contactName?: string;
+  latitude?: string;
+  longitude?: string;
   notes?: string;
   createdAt: string;
 }
@@ -41,6 +43,14 @@ const StoresList: React.FC = () => {
   // Handle store added
   const handleStoreAdded = (newStore: Store) => {
     setStores(prevStores => [...prevStores, newStore]);
+  };
+
+  // Open Google Maps with the location
+  const openInMaps = (latitude?: string, longitude?: string) => {
+    if (latitude && longitude) {
+      const url = `https://www.google.com/maps?q=${latitude},${longitude}`;
+      window.open(url, '_blank');
+    }
   };
 
   return (
@@ -82,6 +92,17 @@ const StoresList: React.FC = () => {
                       <Store className="h-5 w-5 text-bisko-500" />
                       <h3 className="text-lg font-semibold">{store.name}</h3>
                     </div>
+                    {store.latitude && store.longitude && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-xs flex items-center gap-1"
+                        onClick={() => openInMaps(store.latitude, store.longitude)}
+                      >
+                        <Map className="h-3 w-3" />
+                        Voir sur la carte
+                      </Button>
+                    )}
                   </div>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-start gap-2">
@@ -107,6 +128,13 @@ const StoresList: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
                         <span>{store.contactName}</span>
+                      </div>
+                    )}
+
+                    {(store.latitude || store.longitude) && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
+                        <MapPin className="h-3 w-3" />
+                        <span>Coordonnées: {store.latitude || '?'}, {store.longitude || '?'}</span>
                       </div>
                     )}
                   </div>

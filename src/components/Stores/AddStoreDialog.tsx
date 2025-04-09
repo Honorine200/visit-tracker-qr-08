@@ -28,10 +28,17 @@ const AddStoreDialog: React.FC<AddStoreDialogProps> = ({
   const { toast } = useToast();
 
   const handleSubmit = (values: StoreFormValues) => {
+    // Convert latitude and longitude to numbers if provided
+    const processedValues = {
+      ...values,
+      latitude: values.latitude ? values.latitude.trim() : undefined,
+      longitude: values.longitude ? values.longitude.trim() : undefined
+    };
+
     // Generate a unique ID for the store
     const newStore = {
       id: `store-${Date.now()}`,
-      ...values,
+      ...processedValues,
       createdAt: new Date().toISOString()
     };
 
