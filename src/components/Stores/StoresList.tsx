@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Store, Phone, Mail, User, MapPin, Search, Map } from 'lucide-react';
+import { Store, Phone, Mail, User, MapPin, Search, Map, QrCode } from 'lucide-react';
 import AddStoreDialog from './AddStoreDialog';
+import StoreQRCode from './StoreQRCode';
 
 interface Store {
   id: string;
@@ -23,6 +24,8 @@ const StoresList: React.FC = () => {
   const [stores, setStores] = useState<Store[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredStores, setFilteredStores] = useState<Store[]>([]);
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
 
   // Load stores from localStorage
   useEffect(() => {
@@ -51,6 +54,12 @@ const StoresList: React.FC = () => {
       const url = `https://www.google.com/maps?q=${latitude},${longitude}`;
       window.open(url, '_blank');
     }
+  };
+
+  // Open QR code dialog
+  const openQRDialog = (store: Store) => {
+    setSelectedStore(store);
+    setQrDialogOpen(true);
   };
 
   return (
@@ -92,17 +101,28 @@ const StoresList: React.FC = () => {
                       <Store className="h-5 w-5 text-bisko-500" />
                       <h3 className="text-lg font-semibold">{store.name}</h3>
                     </div>
-                    {store.latitude && store.longitude && (
+                    <div className="flex gap-2">
                       <Button 
                         variant="outline" 
                         size="sm" 
                         className="text-xs flex items-center gap-1"
-                        onClick={() => openInMaps(store.latitude, store.longitude)}
+                        onClick={() => openQRDialog(store)}
                       >
-                        <Map className="h-3 w-3" />
-                        Voir sur la carte
+                        <QrCode className="h-3 w-3" />
+                        QR Code
                       </Button>
-                    )}
+                      {store.latitude && store.longitude && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-xs flex items-center gap-1"
+                          onClick={() => openInMaps(store.latitude, store.longitude)}
+                        >
+                          <Map className="h-3 w-3" />
+                          Voir sur la carte
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-start gap-2">
@@ -150,6 +170,14 @@ const StoresList: React.FC = () => {
             Affichage de {filteredStores.length} boutique{filteredStores.length > 1 ? 's' : ''}
           </div>
         </CardFooter>
+      )}
+      
+      {selectedStore && (
+        <StoreQRCode 
+          store={selectedStore}
+          open={qrDialogOpen}
+          onOpenChange={setQrDialogOpen}
+        />
       )}
     </Card>
   );
