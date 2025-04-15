@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import VisitsList from '@/components/Visits/VisitsList';
+import AddVisitForm from '@/components/Visits/AddVisitForm';
 
 const Visits: React.FC = () => {
   const navigate = useNavigate();
@@ -14,7 +15,12 @@ const Visits: React.FC = () => {
     }
   }, [navigate]);
   
-  return <VisitsList />;
+  return (
+    <div className="space-y-6">
+      <AddVisitForm />
+      <VisitsList />
+    </div>
+  );
 };
 
 export default Visits;

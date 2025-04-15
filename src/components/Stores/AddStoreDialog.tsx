@@ -48,6 +48,12 @@ const AddStoreDialog: React.FC<AddStoreDialogProps> = ({
     const updatedStores = [...existingStores, newStore];
     localStorage.setItem('stores', JSON.stringify(updatedStores));
 
+    // Trigger an event for the admin dashboard to pick up
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'stores',
+      newValue: JSON.stringify(updatedStores)
+    }));
+
     // Close the dialog
     setOpen(false);
 

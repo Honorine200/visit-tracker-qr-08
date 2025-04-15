@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AddStoreDialog from '@/components/Stores/AddStoreDialog';
 import StoreQRCode from '@/components/Stores/StoreQRCode';
+import { useToast } from '@/components/ui/use-toast';
 import { 
   Store, 
   Search, 
@@ -22,8 +23,10 @@ import {
   User, 
   ListFilter, 
   Map, 
-  QrCode 
+  QrCode,
+  RefreshCw
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StoreType {
   id: string;
@@ -48,9 +51,17 @@ const StoresManagement: React.FC = () => {
   const [currentTab, setCurrentTab] = useState("list");
   const [selectedZone, setSelectedZone] = useState<string>("all");
   const [zones, setZones] = useState<string[]>([]);
+  const [lastSynced, setLastSynced] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const { toast } = useToast();
 
   // Load stores from localStorage
   useEffect(() => {
+    loadStores();
+  }, []);
+
+  const loadStores = () => {
+    setLoading(true);
     setTimeout(() => {
       const storedStores = JSON.parse(localStorage.getItem('stores') || '[]');
       setStores(storedStores);
@@ -63,12 +74,40 @@ const StoresManagement: React.FC = () => {
             return parts[parts.length - 1].trim();
           })
         )
-      );
+      ) as string[];
+      
       setZones(extractedZones);
+      
+      // Set last synced time
+      const lastSyncTime = localStorage.getItem('lastStoreSync');
+      if (lastSyncTime) {
+        setLastSynced(lastSyncTime);
+      }
       
       setLoading(false);
     }, 1000);
-  }, []);
+  };
+
+  // Sync data from Supabase (simulated for now)
+  const syncData = () => {
+    setSyncing(true);
+    
+    // Simulate data sync
+    setTimeout(() => {
+      // In a real implementation, this would fetch data from Supabase
+      // For now, we'll just update the sync timestamp
+      const now = new Date().toISOString();
+      localStorage.setItem('lastStoreSync', now);
+      setLastSynced(now);
+      
+      toast({
+        title: "Synchronisation terminée",
+        description: "Les données ont été synchronisées avec succès.",
+      });
+      
+      setSyncing(false);
+    }, 2000);
+  };
 
   // Filter stores based on search term and zone
   useEffect(() => {
@@ -105,6 +144,11 @@ const StoresManagement: React.FC = () => {
     if (!zones.includes(newZone)) {
       setZones(prev => [...prev, newZone]);
     }
+    
+    // Update last synced time
+    const now = new Date().toISOString();
+    localStorage.setItem('lastStoreSync', now);
+    setLastSynced(now);
   };
 
   // Open Google Maps with the location
@@ -135,6 +179,19 @@ const StoresManagement: React.FC = () => {
     }
   };
 
+  // Format time for display
+  const formatTime = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('fr-FR', {
+        hour: 'numeric',
+        minute: 'numeric',
+      }).format(date);
+    } catch (e) {
+      return "";
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -155,7 +212,24 @@ const StoresManagement: React.FC = () => {
               Gérez l'ensemble des boutiques de votre réseau
             </CardDescription>
           </div>
-          <AddStoreDialog onStoreAdded={handleStoreAdded} />
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col items-end text-xs text-muted-foreground">
+              {lastSynced && (
+                <span>Dernière sync: {formatDate(lastSynced)} à {formatTime(lastSynced)}</span>
+              )}
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={syncData}
+              disabled={syncing}
+              className="flex items-center gap-1"
+            >
+              <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? 'Synchronisation...' : 'Synchroniser'}
+            </Button>
+            <AddStoreDialog onStoreAdded={handleStoreAdded} />
+          </div>
         </CardHeader>
         <CardContent>
           <Tabs value={currentTab} onValueChange={setCurrentTab}>

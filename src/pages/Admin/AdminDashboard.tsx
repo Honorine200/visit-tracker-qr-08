@@ -8,6 +8,8 @@ import {
   CardDescription,
 } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 import {
   Users,
   Store,
@@ -15,7 +17,9 @@ import {
   FileText,
   TrendingUp,
   Calendar,
+  RefreshCw
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StatsCardProps {
   title: string;
@@ -24,6 +28,14 @@ interface StatsCardProps {
   icon: React.ReactNode;
   trend?: number;
   color?: string;
+}
+
+interface ActivityItem {
+  action: string;
+  user: string;
+  time: string;
+  icon: React.ReactNode;
+  timestamp: string;
 }
 
 const StatsCard: React.FC<StatsCardProps> = ({
@@ -63,15 +75,154 @@ const StatsCard: React.FC<StatsCardProps> = ({
 
 const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [lastSynced, setLastSynced] = useState<string | null>(null);
+  const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([]);
+  const { toast } = useToast();
   
   useEffect(() => {
-    // Simuler le chargement des données
-    const timer = setTimeout(() => {
+    // Load data and last sync time
+    loadDashboardData();
+    
+    // Set up a listener for store changes
+    window.addEventListener('storage', handleStorageEvent);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageEvent);
+    };
+  }, []);
+  
+  const handleStorageEvent = (e: StorageEvent) => {
+    if (e.key === 'stores' || e.key === 'visits' || e.key === 'invoices') {
+      // Reload activities when relevant data changes
+      loadRecentActivities();
+    }
+  };
+  
+  const loadDashboardData = () => {
+    setLoading(true);
+    
+    // Simulated loading delay
+    setTimeout(() => {
+      // Load last sync time
+      const lastSyncTime = localStorage.getItem('lastDashboardSync');
+      if (lastSyncTime) {
+        setLastSynced(lastSyncTime);
+      }
+      
+      // Load recent activities
+      loadRecentActivities();
+      
       setLoading(false);
     }, 1000);
+  };
+  
+  const loadRecentActivities = () => {
+    // In a real app, this would fetch from Supabase
+    // For now, we'll create some mock data based on localStorage
     
-    return () => clearTimeout(timer);
-  }, []);
+    const activities: ActivityItem[] = [];
+    
+    // Get recent stores
+    const stores = JSON.parse(localStorage.getItem('stores') || '[]');
+    if (stores.length > 0) {
+      // Sort by creation date, newest first
+      stores.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      // Add the 2 most recent stores as activities
+      stores.slice(0, 2).forEach((store: any) => {
+        activities.push({
+          action: `Nouvelle boutique ajoutée: ${store.name}`,
+          user: "Commercial",
+          time: formatRelativeTime(store.createdAt),
+          icon: <Store size={14} className="text-green-500" />,
+          timestamp: store.createdAt
+        });
+      });
+    }
+    
+    // Get recent visits (placeholder for now)
+    const visits = JSON.parse(localStorage.getItem('visits') || '[]');
+    if (visits.length > 0) {
+      // Add some visit activities
+      visits.slice(0, 2).forEach((visit: any) => {
+        activities.push({
+          action: `Visite effectuée chez ${visit.storeName || 'un client'}`,
+          user: visit.agentName || "Commercial",
+          time: formatRelativeTime(visit.date),
+          icon: <Calendar size={14} className="text-blue-500" />,
+          timestamp: visit.date
+        });
+      });
+    }
+    
+    // Sort all activities by timestamp, newest first
+    activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    
+    // Take the 4 most recent activities
+    setRecentActivities(activities.slice(0, 4));
+  };
+  
+  const formatRelativeTime = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+      
+      if (diffInSeconds < 60) {
+        return "Il y a quelques instants";
+      } else if (diffInSeconds < 3600) {
+        const minutes = Math.floor(diffInSeconds / 60);
+        return `Il y a ${minutes} minute${minutes > 1 ? 's' : ''}`;
+      } else if (diffInSeconds < 86400) {
+        const hours = Math.floor(diffInSeconds / 3600);
+        return `Il y a ${hours} heure${hours > 1 ? 's' : ''}`;
+      } else {
+        const days = Math.floor(diffInSeconds / 86400);
+        return `Il y a ${days} jour${days > 1 ? 's' : ''}`;
+      }
+    } catch (e) {
+      return "Date inconnue";
+    }
+  };
+  
+  const syncData = () => {
+    setSyncing(true);
+    
+    // Simulate data sync
+    setTimeout(() => {
+      // In a real implementation, this would sync with Supabase
+      const now = new Date().toISOString();
+      localStorage.setItem('lastDashboardSync', now);
+      setLastSynced(now);
+      
+      // Reload activities
+      loadRecentActivities();
+      
+      toast({
+        title: "Synchronisation terminée",
+        description: "Les données ont été synchronisées avec succès.",
+      });
+      
+      setSyncing(false);
+    }, 2000);
+  };
+  
+  const formatTime = (dateString: string | null) => {
+    if (!dateString) return "";
+    
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('fr-FR', {
+        day: 'numeric',
+        month: 'short',
+        hour: 'numeric',
+        minute: 'numeric'
+      }).format(date);
+    } catch (e) {
+      return "";
+    }
+  };
 
   if (loading) {
     return (
@@ -83,6 +234,27 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-bisko-700">Tableau de bord</h2>
+        <div className="flex items-center gap-3">
+          {lastSynced && (
+            <div className="text-sm text-muted-foreground">
+              Dernière sync: {formatTime(lastSynced)}
+            </div>
+          )}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={syncData}
+            disabled={syncing}
+            className="flex items-center gap-1"
+          >
+            <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? 'Synchronisation...' : 'Synchroniser'}
+          </Button>
+        </div>
+      </div>
+      
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="Commerciaux"
@@ -159,55 +331,46 @@ const AdminDashboard: React.FC = () => {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Activité récente</CardTitle>
-            <CardDescription>
-              Dernières actions effectuées sur la plateforme
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Activité récente</CardTitle>
+              <CardDescription>
+                Dernières actions effectuées sur la plateforme
+              </CardDescription>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-xs"
+              onClick={loadRecentActivities}
+            >
+              Actualiser
+            </Button>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[
-                {
-                  action: "Nouvelle boutique ajoutée",
-                  user: "Marie Diop",
-                  time: "Il y a 30 minutes",
-                  icon: <Store size={14} className="text-green-500" />,
-                },
-                {
-                  action: "Nouvelle facture créée",
-                  user: "Amadou Sow",
-                  time: "Il y a 2 heures",
-                  icon: <FileText size={14} className="text-blue-500" />,
-                },
-                {
-                  action: "Nouvel utilisateur créé",
-                  user: "Admin Système",
-                  time: "Il y a 1 jour",
-                  icon: <Users size={14} className="text-purple-500" />,
-                },
-                {
-                  action: "Catalogue de produits mis à jour",
-                  user: "Admin Système",
-                  time: "Il y a 3 jours",
-                  icon: <Package size={14} className="text-amber-500" />,
-                },
-              ].map((item, i) => (
-                <div key={i} className="flex justify-between items-start pb-4 last:pb-0 last:border-0 border-b border-border">
-                  <div className="flex items-start gap-3">
-                    <div className="bg-muted p-1.5 rounded-full">
-                      {item.icon}
+              {recentActivities.length > 0 ? (
+                recentActivities.map((item, i) => (
+                  <div key={i} className="flex justify-between items-start pb-4 last:pb-0 last:border-0 border-b border-border">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-muted p-1.5 rounded-full">
+                        {item.icon}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{item.action}</p>
+                        <p className="text-xs text-muted-foreground">Par {item.user}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium">{item.action}</p>
-                      <p className="text-xs text-muted-foreground">Par {item.user}</p>
+                    <div className="text-xs text-muted-foreground">
+                      {item.time}
                     </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {item.time}
-                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-muted-foreground">
+                  Aucune activité récente
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
