@@ -18,7 +18,7 @@ export const subscribeToTable = (
   callback: (payload: any) => void
 ) => {
   return supabase
-    .channel('public:' + tableName)
+    .channel('table-changes')
     .on(
       'postgres_changes',
       {

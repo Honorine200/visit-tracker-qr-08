@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -27,6 +26,8 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import ImportStoresFromExcel from '@/components/Stores/ImportStoresFromExcel';
+import { subscribeToTable } from '@/integrations/supabase/client';
 
 interface StoreType {
   id: string;
@@ -55,7 +56,6 @@ const StoresManagement: React.FC = () => {
   const [syncing, setSyncing] = useState(false);
   const { toast } = useToast();
 
-  // Load stores from localStorage
   useEffect(() => {
     loadStores();
   }, []);
@@ -66,7 +66,6 @@ const StoresManagement: React.FC = () => {
       const storedStores = JSON.parse(localStorage.getItem('stores') || '[]');
       setStores(storedStores);
       
-      // Extract unique zones from store addresses
       const extractedZones = Array.from(
         new Set(
           storedStores.map((store: StoreType) => {
@@ -78,7 +77,6 @@ const StoresManagement: React.FC = () => {
       
       setZones(extractedZones);
       
-      // Set last synced time
       const lastSyncTime = localStorage.getItem('lastStoreSync');
       if (lastSyncTime) {
         setLastSynced(lastSyncTime);
@@ -88,14 +86,10 @@ const StoresManagement: React.FC = () => {
     }, 1000);
   };
 
-  // Sync data from Supabase (simulated for now)
   const syncData = () => {
     setSyncing(true);
     
-    // Simulate data sync
     setTimeout(() => {
-      // In a real implementation, this would fetch data from Supabase
-      // For now, we'll just update the sync timestamp
       const now = new Date().toISOString();
       localStorage.setItem('lastStoreSync', now);
       setLastSynced(now);
@@ -109,11 +103,9 @@ const StoresManagement: React.FC = () => {
     }, 2000);
   };
 
-  // Filter stores based on search term and zone
   useEffect(() => {
     let filtered = stores;
     
-    // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(store => 
         store.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -122,7 +114,6 @@ const StoresManagement: React.FC = () => {
       );
     }
     
-    // Apply zone filter
     if (selectedZone !== "all") {
       filtered = filtered.filter(store => {
         const parts = store.address.split(',');
@@ -134,24 +125,43 @@ const StoresManagement: React.FC = () => {
     setFilteredStores(filtered);
   }, [stores, searchTerm, selectedZone]);
 
-  // Handle store added
   const handleStoreAdded = (newStore: StoreType) => {
     setStores(prevStores => [...prevStores, newStore]);
     
-    // Check if we need to add a new zone
     const parts = newStore.address.split(',');
     const newZone = parts[parts.length - 1].trim();
     if (!zones.includes(newZone)) {
       setZones(prev => [...prev, newZone]);
     }
     
-    // Update last synced time
     const now = new Date().toISOString();
     localStorage.setItem('lastStoreSync', now);
     setLastSynced(now);
   };
 
-  // Open Google Maps with the location
+  const handleStoresImported = (importedStores: StoreType[]) => {
+    setStores(prevStores => [...prevStores, ...importedStores]);
+    
+    const newZones = importedStores.map(store => {
+      const parts = store.address.split(',');
+      return parts[parts.length - 1].trim();
+    });
+    
+    const uniqueNewZones = Array.from(new Set(newZones)).filter(zone => !zones.includes(zone));
+    if (uniqueNewZones.length > 0) {
+      setZones(prev => [...prev, ...uniqueNewZones]);
+    }
+    
+    const now = new Date().toISOString();
+    localStorage.setItem('lastStoreSync', now);
+    setLastSynced(now);
+    
+    toast({
+      title: "Boutiques importées",
+      description: `${importedStores.length} boutiques ont été importées avec succès.`,
+    });
+  };
+
   const openInMaps = (latitude?: string, longitude?: string) => {
     if (latitude && longitude) {
       const url = `https://www.google.com/maps?q=${latitude},${longitude}`;
@@ -159,13 +169,11 @@ const StoresManagement: React.FC = () => {
     }
   };
 
-  // Open QR code dialog
   const openQRDialog = (store: StoreType) => {
     setSelectedStore(store);
     setQrDialogOpen(true);
   };
-  
-  // Format date for display
+
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -179,7 +187,6 @@ const StoresManagement: React.FC = () => {
     }
   };
 
-  // Format time for display
   const formatTime = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -228,6 +235,7 @@ const StoresManagement: React.FC = () => {
               <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
               {syncing ? 'Synchronisation...' : 'Synchroniser'}
             </Button>
+            <ImportStoresFromExcel onImportComplete={handleStoresImported} />
             <AddStoreDialog onStoreAdded={handleStoreAdded} />
           </div>
         </CardHeader>
