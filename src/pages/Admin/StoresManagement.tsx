@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -12,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AddStoreDialog from '@/components/Stores/AddStoreDialog';
 import StoreQRCode from '@/components/Stores/StoreQRCode';
+import StoresMap from '@/components/Stores/StoresMap';
 import { useToast } from '@/components/ui/use-toast';
 import { 
   Store, 
@@ -244,6 +246,7 @@ const StoresManagement: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
               <TabsList>
                 <TabsTrigger value="list">Liste</TabsTrigger>
+                <TabsTrigger value="map">Carte</TabsTrigger>
                 <TabsTrigger value="stats">Statistiques</TabsTrigger>
               </TabsList>
               
@@ -362,6 +365,10 @@ const StoresManagement: React.FC = () => {
                   ))}
                 </div>
               )}
+            </TabsContent>
+            
+            <TabsContent value="map" className="mt-4">
+              <StoresMap stores={filteredStores} />
             </TabsContent>
             
             <TabsContent value="stats" className="mt-4">
