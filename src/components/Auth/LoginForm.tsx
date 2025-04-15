@@ -21,7 +21,13 @@ const LoginForm: React.FC = () => {
     
     // Extraire le nom d'utilisateur de l'adresse Gmail
     let userName = 'Utilisateur Démo';
-    if (email.endsWith('@gmail.com')) {
+    let role = 'commercial'; // Rôle par défaut
+    
+    // Vérifier si c'est l'admin qui se connecte
+    if (email.toLowerCase() === 'admin@bisko.com') {
+      userName = 'Admin Système';
+      role = 'admin';
+    } else if (email.endsWith('@gmail.com')) {
       // Prend la partie avant @gmail.com et remplace les points par des espaces
       // puis met en majuscule la première lettre de chaque mot
       userName = email.split('@')[0]
@@ -38,8 +44,8 @@ const LoginForm: React.FC = () => {
         id: '1',
         name: userName,
         email: email,
-        role: 'commercial',
-        zone: 'Dakar'
+        role: role,
+        zone: role === 'admin' ? 'Tous' : 'Dakar'
       }));
       
       setIsLoading(false);
@@ -48,7 +54,7 @@ const LoginForm: React.FC = () => {
         description: "Bienvenue sur l'application Bisko.",
       });
       
-      navigate('/dashboard');
+      navigate(role === 'admin' ? '/admin' : '/dashboard');
     }, 1500);
   };
   
@@ -57,7 +63,7 @@ const LoginForm: React.FC = () => {
       <CardHeader className="space-y-1 text-center">
         <CardTitle className="text-2xl font-bold">Bisko</CardTitle>
         <CardDescription>
-          Connectez-vous pour accéder à votre espace commercial
+          Connectez-vous pour accéder à votre espace
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -98,6 +104,11 @@ const LoginForm: React.FC = () => {
                 )}
               </button>
             </div>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            <p>Pour tester l'accès administrateur, utilisez:</p>
+            <p><strong>Email:</strong> admin@bisko.com</p>
+            <p><strong>Mot de passe:</strong> [n'importe quel mot de passe]</p>
           </div>
           <Button 
             type="submit" 

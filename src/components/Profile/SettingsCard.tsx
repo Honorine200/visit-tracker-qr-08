@@ -1,12 +1,13 @@
 
 import React from 'react';
-import { LogOut, Moon, Sun, RefreshCw } from 'lucide-react';
+import { LogOut, Moon, Sun, RefreshCw, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import { isAdmin } from '@/utils/authUtils';
 
 interface SettingsCardProps {
   isDarkMode: boolean;
@@ -23,6 +24,9 @@ const SettingsCard: React.FC<SettingsCardProps> = ({
   onSyncData, 
   onLogout 
 }) => {
+  const navigate = useNavigate();
+  const userIsAdmin = isAdmin();
+  
   return (
     <Card className="glass-card">
       <CardHeader>
@@ -68,6 +72,16 @@ const SettingsCard: React.FC<SettingsCardProps> = ({
             </>
           )}
         </Button>
+        
+        {userIsAdmin && (
+          <Button 
+            className="w-full bg-bisko-500 hover:bg-bisko-600 flex items-center justify-center gap-2"
+            onClick={() => navigate('/admin')}
+          >
+            <Settings className="h-4 w-4" />
+            Accéder à l'administration
+          </Button>
+        )}
       </CardContent>
       <CardFooter>
         <Button 
