@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -17,6 +16,8 @@ import {
   Calendar,
   Download,
   Filter,
+  Users,
+  User,
 } from 'lucide-react';
 import {
   BarChart as RechartsBarChart,
@@ -31,8 +32,16 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
-// Données fictives pour les différents graphiques
 const visitsByDayData = [
   { day: 'Lun', count: 18 },
   { day: 'Mar', count: 25 },
@@ -82,13 +91,28 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+const salesByRepData = [
+  { name: 'Amadou Diop', visits: 45, sales: 85000, rate: 92 },
+  { name: 'Fatou Ndiaye', visits: 38, sales: 67000, rate: 85 },
+  { name: 'Moussa Sène', visits: 32, sales: 58000, rate: 78 },
+  { name: 'Aïda Mbaye', visits: 28, sales: 52000, rate: 81 },
+  { name: 'Omar Fall', visits: 25, sales: 43000, rate: 76 },
+];
+
+const repPerformanceData = [
+  { month: 'Jan', 'Amadou Diop': 15000, 'Fatou Ndiaye': 12000, 'Moussa Sène': 10000 },
+  { month: 'Fév', 'Amadou Diop': 18000, 'Fatou Ndiaye': 13500, 'Moussa Sène': 11000 },
+  { month: 'Mar', 'Amadou Diop': 17000, 'Fatou Ndiaye': 15000, 'Moussa Sène': 12500 },
+  { month: 'Avr', 'Amadou Diop': 22000, 'Fatou Ndiaye': 16000, 'Moussa Sène': 14000 },
+  { month: 'Mai', 'Amadou Diop': 25000, 'Fatou Ndiaye': 18000, 'Moussa Sène': 15000 },
+];
+
 const AdminReports: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [reportPeriod, setReportPeriod] = useState('this-month');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simuler le chargement des données
     const timer = setTimeout(() => {
       setLoading(false);
     }, 1500);
@@ -141,6 +165,7 @@ const AdminReports: React.FC = () => {
               <TabsTrigger value="sales">Ventes</TabsTrigger>
               <TabsTrigger value="visits">Visites</TabsTrigger>
               <TabsTrigger value="stores">Boutiques</TabsTrigger>
+              <TabsTrigger value="reps">Commerciaux</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-4">
@@ -439,6 +464,112 @@ const AdminReports: React.FC = () => {
                         </tbody>
                       </table>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="reps" className="space-y-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-medium flex items-center gap-2">
+                    <Users className="h-4 w-4 text-bisko-500" /> Rapport par commerciaux
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="p-4 border rounded-lg bg-muted/30">
+                        <div className="text-2xl font-bold text-bisko-600">
+                          5
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Commerciaux actifs
+                        </div>
+                      </div>
+                      <div className="p-4 border rounded-lg bg-muted/30">
+                        <div className="text-2xl font-bold text-bisko-600">
+                          168
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Visites totales
+                        </div>
+                      </div>
+                      <div className="p-4 border rounded-lg bg-muted/30">
+                        <div className="text-2xl font-bold text-bisko-600">
+                          305,000 FCFA
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Chiffre d'affaires total
+                        </div>
+                      </div>
+                      <div className="p-4 border rounded-lg bg-muted/30">
+                        <div className="text-2xl font-bold text-bisko-600">
+                          82.4%
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Taux de conversion moyen
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="h-72">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RechartsBarChart
+                          data={repPerformanceData}
+                          margin={{
+                            top: 20,
+                            right: 30,
+                            left: 20,
+                            bottom: 5,
+                          }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Legend />
+                          <Bar dataKey="Amadou Diop" fill="#4585fc" name="Amadou Diop" />
+                          <Bar dataKey="Fatou Ndiaye" fill="#22c55e" name="Fatou Ndiaye" />
+                          <Bar dataKey="Moussa Sène" fill="#f97316" name="Moussa Sène" />
+                        </RechartsBarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    
+                    <h3 className="text-lg font-medium mt-6 mb-3">Performance des commerciaux</h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Commercial</TableHead>
+                          <TableHead>Visites</TableHead>
+                          <TableHead>Ventes (FCFA)</TableHead>
+                          <TableHead>Taux de conversion</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {salesByRepData.map((rep, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-muted-foreground" />
+                                {rep.name}
+                              </div>
+                            </TableCell>
+                            <TableCell>{rep.visits}</TableCell>
+                            <TableCell>{rep.sales.toLocaleString()} FCFA</TableCell>
+                            <TableCell>
+                              <span className={`px-2 py-1 rounded-full text-xs inline-flex items-center ${
+                                rep.rate >= 80 
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
+                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+                              }`}>
+                                {rep.rate}%
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 </CardContent>
               </Card>
