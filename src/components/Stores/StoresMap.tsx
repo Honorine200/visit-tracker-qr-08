@@ -14,8 +14,12 @@ interface Store {
   id: string;
   name: string;
   address: string;
-  latitude?: string;
-  longitude?: string;
+  latitude: string;
+  longitude: string;
+  phone?: string;
+  email?: string;
+  contactName?: string;
+  createdAt?: string;
 }
 
 interface StoresMapProps {
@@ -84,22 +88,22 @@ const StoresMap: React.FC<StoresMapProps> = ({ stores }) => {
         const lng = parseFloat(store.longitude);
         const lat = parseFloat(store.latitude);
         
-        // Create a custom marker element
+        // Create a custom marker element with yellow background
         const el = document.createElement('div');
         el.className = 'custom-marker';
-        el.innerHTML = `<div class="w-6 h-6 text-white flex items-center justify-center bg-bisko-500 rounded-full shadow-md">
+        el.innerHTML = `<div class="w-6 h-6 text-gray-800 flex items-center justify-center bg-[#FEF7CD] rounded-full shadow-md border border-yellow-300">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-store"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v1a2 2 0 0 1-2 2v0a2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v1a2 2 0 0 1-2 2v0a2 2 0 0 1-2-2V7"/></svg>
         </div>`;
         
-        // Add marker to map
+        // Add marker to map with yellow-themed popup
         const marker = new mapboxgl.Marker(el)
           .setLngLat([lng, lat])
           .setPopup(
             new mapboxgl.Popup({ offset: 25 })
               .setHTML(`
-                <div>
-                  <h3 class="text-sm font-bold">${store.name}</h3>
-                  <p class="text-xs">${store.address}</p>
+                <div class="p-2 bg-[#FEF7CD] rounded border border-yellow-300">
+                  <h3 class="text-sm font-bold text-gray-800">${store.name}</h3>
+                  <p class="text-xs text-gray-700">${store.address}</p>
                 </div>
               `)
           )

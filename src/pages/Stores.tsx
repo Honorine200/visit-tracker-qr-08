@@ -17,6 +17,7 @@ interface StoreData {
   email?: string;
   contactName?: string;
   notes?: string;
+  createdAt: string;
 }
 
 const Stores: React.FC = () => {

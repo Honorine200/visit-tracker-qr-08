@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -38,8 +39,8 @@ interface StoreType {
   phone?: string;
   email?: string;
   contactName?: string;
-  latitude?: string;
-  longitude?: string;
+  latitude: string;
+  longitude: string;
   notes?: string;
   createdAt: string;
 }
