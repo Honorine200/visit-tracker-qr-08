@@ -1,14 +1,52 @@
-
-import React, { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import React from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import './StoresMap.css';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import L from 'leaflet';
 
-// Temporary token - in production, this should be stored in environment variables
-// and retrieved from Supabase
-const MAPBOX_TOKEN = "pk.eyJ1IjoibG92YWJsZS1haSIsImEiOiJjbHc4OGVseWQwazZuMm1rNjNwYjY5bnRqIn0.a3bBvB7L_QQj42IAHCxTKw";
+// Fix pour les icônes Leaflet qui ne s'affichent pas correctement
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41]
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
+
+// Création d'un marqueur personnalisé avec fond jaune
+const createCustomIcon = () => {
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `<div class="w-6 h-6 text-gray-800 flex items-center justify-center bg-[#FEF7CD] rounded-full shadow-md border border-yellow-300">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-store"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v1a2 2 0 0 1-2 2v0a2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v1a2 2 0 0 1-2 2v0a2 2 0 0 1-2-2V7"/></svg>
+    </div>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
+  });
+};
+
+// Composant pour ajuster automatiquement la vue de la carte
+const SetBoundsRectangle = ({ stores }) => {
+  const map = useMap();
+  
+  React.useEffect(() => {
+    if (stores.length > 0) {
+      const bounds = L.latLngBounds(
+        stores.map(store => [parseFloat(store.latitude), parseFloat(store.longitude)])
+      );
+      map.fitBounds(bounds, { padding: [50, 50] });
+    }
+  }, [map, stores]);
+  
+  return null;
+};
 
 interface Store {
   id: string;
@@ -27,102 +65,18 @@ interface StoresMapProps {
 }
 
 const StoresMap: React.FC<StoresMapProps> = ({ stores }) => {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<mapboxgl.Marker[]>([]);
-  const [mapLoaded, setMapLoaded] = useState(false);
   const { toast } = useToast();
+  const customIcon = createCustomIcon();
 
-  // Filter stores that have valid coordinates
+  // Filtrer les boutiques qui ont des coordonnées valides
   const storesWithCoordinates = stores.filter(
     store => store.latitude && store.longitude && 
     !isNaN(parseFloat(store.latitude)) && !isNaN(parseFloat(store.longitude))
   );
 
-  useEffect(() => {
-    if (!mapContainer.current) return;
-    
-    mapboxgl.accessToken = MAPBOX_TOKEN;
-
-    try {
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
-        center: [2.349014, 48.864716], // Default to Paris, France
-        zoom: 5
-      });
-
-      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-      map.current.on('load', () => {
-        setMapLoaded(true);
-      });
-    } catch (error) {
-      console.error('Error initializing map:', error);
-      toast({
-        title: "Erreur d'initialisation de la carte",
-        description: "Veuillez vérifier votre connexion internet et réessayer.",
-        variant: "destructive"
-      });
-    }
-
-    return () => {
-      map.current?.remove();
-    };
-  }, [toast]);
-
-  useEffect(() => {
-    if (!map.current || !mapLoaded) return;
-
-    // Clear existing markers
-    markersRef.current.forEach(marker => marker.remove());
-    markersRef.current = [];
-
-    // Add markers for stores with coordinates
-    if (storesWithCoordinates.length > 0) {
-      const bounds = new mapboxgl.LngLatBounds();
-
-      storesWithCoordinates.forEach(store => {
-        if (!store.latitude || !store.longitude) return;
-        
-        const lng = parseFloat(store.longitude);
-        const lat = parseFloat(store.latitude);
-        
-        // Create a custom marker element with yellow background
-        const el = document.createElement('div');
-        el.className = 'custom-marker';
-        el.innerHTML = `<div class="w-6 h-6 text-gray-800 flex items-center justify-center bg-[#FEF7CD] rounded-full shadow-md border border-yellow-300">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-store"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v1a2 2 0 0 1-2 2v0a2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v1a2 2 0 0 1-2 2v0a2 2 0 0 1-2-2V7"/></svg>
-        </div>`;
-        
-        // Add marker to map with yellow-themed popup
-        const marker = new mapboxgl.Marker(el)
-          .setLngLat([lng, lat])
-          .setPopup(
-            new mapboxgl.Popup({ offset: 25 })
-              .setHTML(`
-                <div class="p-2 bg-[#FEF7CD] rounded border border-yellow-300">
-                  <h3 class="text-sm font-bold text-gray-800">${store.name}</h3>
-                  <p class="text-xs text-gray-700">${store.address}</p>
-                </div>
-              `)
-          )
-          .addTo(map.current!);
-        
-        markersRef.current.push(marker);
-        bounds.extend([lng, lat]);
-      });
-
-      // Fit map to bounds with padding
-      if (!bounds.isEmpty()) {
-        map.current.fitBounds(bounds, {
-          padding: 50,
-          maxZoom: 15
-        });
-      }
-    }
-  }, [storesWithCoordinates, mapLoaded]);
-
+  // Centre par défaut (Paris, France)
+  const defaultCenter = [48.864716, 2.349014];
+  
   return (
     <Card className="w-full h-full">
       <CardHeader className="flex flex-row items-center justify-between py-3">
@@ -145,7 +99,35 @@ const StoresMap: React.FC<StoresMapProps> = ({ stores }) => {
             </p>
           </div>
         ) : (
-          <div ref={mapContainer} className="h-[500px] w-full rounded-md overflow-hidden" />
+          <div className="h-[500px] w-full rounded-md overflow-hidden">
+            <MapContainer 
+              center={defaultCenter} 
+              zoom={5} 
+              style={{ height: '100%', width: '100%' }}
+              zoomControl={true}
+              attributionControl={true}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {storesWithCoordinates.map((store) => (
+                <Marker 
+                  key={store.id}
+                  position={[parseFloat(store.latitude), parseFloat(store.longitude)]}
+                  icon={customIcon}
+                >
+                  <Popup className="leaflet-popup-custom">
+                    <div className="p-2 bg-[#FEF7CD] rounded border border-yellow-300">
+                      <h3 className="text-sm font-bold text-gray-800">{store.name}</h3>
+                      <p className="text-xs text-gray-700">{store.address}</p>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+              <SetBoundsRectangle stores={storesWithCoordinates} />
+            </MapContainer>
+          </div>
         )}
       </CardContent>
     </Card>

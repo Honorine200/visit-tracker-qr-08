@@ -1,0 +1,31 @@
+
+/* Styles personnalisés pour les popups Leaflet */
+.leaflet-popup-content-wrapper {
+  padding: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.leaflet-popup-content {
+  margin: 0;
+  padding: 0;
+  width: auto !important;
+}
+
+.leaflet-popup-tip {
+  background-color: #FEF7CD;
+  border: 1px solid #FBBF24;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  color: #333;
+  padding: 4px 4px 0 0;
+}
+
+/* Custom marker styling */
+.custom-marker {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
