@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Store, MapPin, QrCode } from 'lucide-react';
 import StoresList from '@/components/Stores/StoresList';
 import StoreQRCode from '@/components/Stores/StoreQRCode';
+import StoresQRCodeGallery from '@/components/Stores/StoresQRCodeGallery';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -20,6 +21,7 @@ interface StoreData {
 
 const Stores: React.FC = () => {
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const [qrGalleryOpen, setQrGalleryOpen] = useState(false);
   const [stores, setStores] = useState<StoreData[]>([]);
   const [selectedStore, setSelectedStore] = useState<StoreData | null>(null);
 
@@ -36,6 +38,10 @@ const Stores: React.FC = () => {
     }
   };
 
+  const handleShowAllQRCodes = () => {
+    setQrGalleryOpen(true);
+  };
+
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6">
       <div className="flex items-center justify-between mb-6">
@@ -44,14 +50,24 @@ const Stores: React.FC = () => {
           <h1 className="text-2xl font-bold">Gestion des boutiques</h1>
         </div>
         {stores.length > 0 && (
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2 text-bisko-600 border-bisko-200 hover:bg-bisko-50"
-            onClick={handleGenerateQRCode}
-          >
-            <QrCode className="h-4 w-4" />
-            Générer QR Code
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2 text-bisko-600 border-bisko-200 hover:bg-bisko-50"
+              onClick={handleShowAllQRCodes}
+            >
+              <QrCode className="h-4 w-4" />
+              Tous les QR codes
+            </Button>
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2 text-bisko-600 border-bisko-200 hover:bg-bisko-50"
+              onClick={handleGenerateQRCode}
+            >
+              <QrCode className="h-4 w-4" />
+              Générer QR Code
+            </Button>
+          </div>
         )}
       </div>
       
@@ -76,6 +92,12 @@ const Stores: React.FC = () => {
           onOpenChange={setQrDialogOpen}
         />
       )}
+
+      <StoresQRCodeGallery 
+        stores={stores}
+        open={qrGalleryOpen}
+        onOpenChange={setQrGalleryOpen}
+      />
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -13,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AddStoreDialog from '@/components/Stores/AddStoreDialog';
 import StoreQRCode from '@/components/Stores/StoreQRCode';
+import StoresQRCodeGallery from '@/components/Stores/StoresQRCodeGallery';
 import StoresMap from '@/components/Stores/StoresMap';
 import { useToast } from '@/components/ui/use-toast';
 import { 
@@ -56,6 +56,7 @@ const StoresManagement: React.FC = () => {
   const [zones, setZones] = useState<string[]>([]);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [qrGalleryOpen, setQrGalleryOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -176,6 +177,10 @@ const StoresManagement: React.FC = () => {
     setQrDialogOpen(true);
   };
 
+  const openQRGallery = () => {
+    setQrGalleryOpen(true);
+  };
+
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -237,6 +242,17 @@ const StoresManagement: React.FC = () => {
               <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
               {syncing ? 'Synchronisation...' : 'Synchroniser'}
             </Button>
+            {stores.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={openQRGallery}
+                className="flex items-center gap-1"
+              >
+                <QrCode className="h-4 w-4" />
+                Tous les QR codes
+              </Button>
+            )}
             <ImportStoresFromExcel onImportComplete={handleStoresImported} />
             <AddStoreDialog onStoreAdded={handleStoreAdded} />
           </div>
@@ -434,6 +450,12 @@ const StoresManagement: React.FC = () => {
           onOpenChange={setQrDialogOpen}
         />
       )}
+
+      <StoresQRCodeGallery 
+        stores={stores}
+        open={qrGalleryOpen}
+        onOpenChange={setQrGalleryOpen}
+      />
     </div>
   );
 };
