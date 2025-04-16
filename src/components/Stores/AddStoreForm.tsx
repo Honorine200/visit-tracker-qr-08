@@ -24,12 +24,14 @@ const formSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email({ message: "Email invalide" }).optional().or(z.literal('')),
   contactName: z.string().optional(),
-  latitude: z.string().optional().or(z.literal(''))
-    .refine(val => !val || !isNaN(parseFloat(val)), { message: "La latitude doit être un nombre valide" })
-    .refine(val => !val || (parseFloat(val) >= -90 && parseFloat(val) <= 90), { message: "La latitude doit être entre -90 et 90" }),
-  longitude: z.string().optional().or(z.literal(''))
-    .refine(val => !val || !isNaN(parseFloat(val)), { message: "La longitude doit être un nombre valide" })
-    .refine(val => !val || (parseFloat(val) >= -180 && parseFloat(val) <= 180), { message: "La longitude doit être entre -180 et 180" }),
+  latitude: z.string()
+    .min(1, { message: "La latitude est obligatoire" })
+    .refine(val => !isNaN(parseFloat(val)), { message: "La latitude doit être un nombre valide" })
+    .refine(val => (parseFloat(val) >= -90 && parseFloat(val) <= 90), { message: "La latitude doit être entre -90 et 90" }),
+  longitude: z.string()
+    .min(1, { message: "La longitude est obligatoire" })
+    .refine(val => !isNaN(parseFloat(val)), { message: "La longitude doit être un nombre valide" })
+    .refine(val => (parseFloat(val) >= -180 && parseFloat(val) <= 180), { message: "La longitude doit être entre -180 et 180" }),
   notes: z.string().optional(),
 });
 
@@ -193,7 +195,7 @@ const AddStoreForm: React.FC<AddStoreFormProps> = ({ onSubmit, onCancel }) => {
         <div className="bg-muted/30 p-4 rounded-lg space-y-4 border border-muted">
           <div className="flex items-center gap-2 text-bisko-600">
             <MapPin className="h-4 w-4" />
-            <h3 className="text-sm font-medium">Coordonnées géographiques</h3>
+            <h3 className="text-sm font-medium">Coordonnées géographiques*</h3>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -202,7 +204,7 @@ const AddStoreForm: React.FC<AddStoreFormProps> = ({ onSubmit, onCancel }) => {
               name="latitude"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Latitude</FormLabel>
+                  <FormLabel>Latitude*</FormLabel>
                   <FormControl>
                     <Input placeholder="Ex: 14.7167" {...field} />
                   </FormControl>
@@ -216,7 +218,7 @@ const AddStoreForm: React.FC<AddStoreFormProps> = ({ onSubmit, onCancel }) => {
               name="longitude"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Longitude</FormLabel>
+                  <FormLabel>Longitude*</FormLabel>
                   <FormControl>
                     <Input placeholder="Ex: -17.4677" {...field} />
                   </FormControl>

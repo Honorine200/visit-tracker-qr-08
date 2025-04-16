@@ -10,8 +10,12 @@ interface StoreData {
   id: string;
   name: string;
   address: string;
-  latitude?: string;
-  longitude?: string;
+  latitude: string;
+  longitude: string;
+  phone?: string;
+  email?: string;
+  contactName?: string;
+  notes?: string;
 }
 
 const Stores: React.FC = () => {

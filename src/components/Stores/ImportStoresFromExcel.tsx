@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -20,8 +19,8 @@ interface ImportedStore {
   phone?: string;
   email?: string;
   contactName?: string;
-  latitude?: string;
-  longitude?: string;
+  latitude: string;
+  longitude: string;
   notes?: string;
 }
 
@@ -80,7 +79,7 @@ const ImportStoresFromExcel: React.FC<ImportStoresProps> = ({ onImportComplete }
   const validateData = (data: any[]): ImportedStore[] => {
     // Basic validation - check if each entry has the required fields
     const validData = data.filter(item => {
-      if (!item.name || !item.address) {
+      if (!item.name || !item.address || !item.latitude || !item.longitude) {
         return false;
       }
       return true;
@@ -93,8 +92,8 @@ const ImportStoresFromExcel: React.FC<ImportStoresProps> = ({ onImportComplete }
       phone: item.phone || undefined,
       email: item.email || undefined,
       contactName: item.contactName || item.contact_name || undefined,
-      latitude: item.latitude ? String(item.latitude) : undefined,
-      longitude: item.longitude ? String(item.longitude) : undefined,
+      latitude: item.latitude ? String(item.latitude) : '',
+      longitude: item.longitude ? String(item.longitude) : '',
       notes: item.notes || undefined
     }));
   };
@@ -122,10 +121,7 @@ const ImportStoresFromExcel: React.FC<ImportStoresProps> = ({ onImportComplete }
       localStorage.setItem('stores', JSON.stringify(updatedStores));
       
       // Trigger event for store updates
-      window.dispatchEvent(new StorageEvent('storage', {
-        key: 'stores',
-        newValue: JSON.stringify(updatedStores)
-      }));
+      window.dispatchEvent(new Event('storage'));
       
       // Set last sync time
       const now = new Date().toISOString();
@@ -178,6 +174,7 @@ const ImportStoresFromExcel: React.FC<ImportStoresProps> = ({ onImportComplete }
           </div>
           <DialogDescription>
             Sélectionnez un fichier Excel contenant la liste des boutiques à importer.
+            Le fichier doit contenir les colonnes <strong>name</strong>, <strong>address</strong>, <strong>latitude</strong> et <strong>longitude</strong>.
           </DialogDescription>
         </DialogHeader>
         
@@ -186,7 +183,7 @@ const ImportStoresFromExcel: React.FC<ImportStoresProps> = ({ onImportComplete }
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center w-full">
               <FileSpreadsheet className="h-12 w-12 mx-auto text-gray-400 mb-4" />
               <p className="text-sm text-gray-500 mb-4">
-                Le fichier Excel doit contenir au minimum les colonnes <strong>name</strong> et <strong>address</strong>
+                Le fichier Excel doit contenir les colonnes <strong>name</strong>, <strong>address</strong>, <strong>latitude</strong> et <strong>longitude</strong>
               </p>
               <div className="flex justify-center">
                 <label htmlFor="excel-file" className="cursor-pointer">
@@ -248,7 +245,7 @@ const ImportStoresFromExcel: React.FC<ImportStoresProps> = ({ onImportComplete }
                     <tr>
                       <th className="px-3 py-2 text-left font-medium text-gray-500">Nom</th>
                       <th className="px-3 py-2 text-left font-medium text-gray-500">Adresse</th>
-                      <th className="px-3 py-2 text-left font-medium text-gray-500">Contact</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-500">Coordonnées</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
@@ -256,7 +253,7 @@ const ImportStoresFromExcel: React.FC<ImportStoresProps> = ({ onImportComplete }
                       <tr key={index}>
                         <td className="px-3 py-2 text-gray-800">{store.name}</td>
                         <td className="px-3 py-2 text-gray-600">{store.address}</td>
-                        <td className="px-3 py-2 text-gray-600">{store.contactName || '—'}</td>
+                        <td className="px-3 py-2 text-gray-600">{store.latitude}, {store.longitude}</td>
                       </tr>
                     ))}
                     {preview.length > 5 && (
