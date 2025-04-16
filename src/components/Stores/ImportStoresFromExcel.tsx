@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { 
   Dialog,
@@ -35,8 +36,10 @@ const ImportStoresFromExcel: React.FC<ImportStoresProps> = ({ onImportComplete }
   const [importStatus, setImportStatus] = useState<'idle' | 'preview' | 'importing' | 'error' | 'success'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("File input changed", e.target.files);
     if (!e.target.files || e.target.files.length === 0) {
       setFile(null);
       return;
@@ -51,6 +54,13 @@ const ImportStoresFromExcel: React.FC<ImportStoresProps> = ({ onImportComplete }
     
     setFile(selectedFile);
     processExcelFile(selectedFile);
+  };
+
+  const handleSelectFileClick = () => {
+    // Programmatically click the hidden file input
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
   const processExcelFile = async (file: File) => {
@@ -186,19 +196,22 @@ const ImportStoresFromExcel: React.FC<ImportStoresProps> = ({ onImportComplete }
                 Le fichier Excel doit contenir les colonnes <strong>name</strong>, <strong>address</strong>, <strong>latitude</strong> et <strong>longitude</strong>
               </p>
               <div className="flex justify-center">
-                <label htmlFor="excel-file" className="cursor-pointer">
-                  <input
-                    id="excel-file"
-                    type="file"
-                    accept=".xlsx, .xls"
-                    className="hidden"
-                    onChange={handleFileChange}
-                  />
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Upload className="h-4 w-4" />
-                    Sélectionner un fichier
-                  </Button>
-                </label>
+                <input
+                  ref={fileInputRef}
+                  id="excel-file"
+                  type="file"
+                  accept=".xlsx, .xls"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                <Button 
+                  variant="outline" 
+                  className="flex items-center gap-2"
+                  onClick={handleSelectFileClick}
+                >
+                  <Upload className="h-4 w-4" />
+                  Sélectionner un fichier
+                </Button>
               </div>
             </div>
           </div>
