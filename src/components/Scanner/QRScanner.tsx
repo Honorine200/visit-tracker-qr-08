@@ -30,11 +30,14 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess }) => {
         
         // Simuler la détection d'un QR code pour la démo
         setTimeout(() => {
+          // Générer un ID de boutique aléatoire (pour tester la validation)
+          const isValidStore = Math.random() > 0.3; // 70% de chance d'être valide
+          
           const fakeQRData = JSON.stringify({
-            storeId: 'STORE123',
-            name: 'Boutique Example',
-            address: '123 rue de la Demo, Paris',
-            zone: 'Paris'
+            storeId: isValidStore ? '1' : 'INVALID_STORE_ID',
+            name: isValidStore ? 'Boutique Centrale' : 'Boutique Inconnue',
+            address: isValidStore ? '123 Avenue Pompidou, Dakar' : '999 Rue Inconnue, Ville',
+            zone: 'Dakar'
           });
           
           handleScanSuccess(fakeQRData);
@@ -163,6 +166,10 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess }) => {
             <h3 className="mt-4 text-xl font-medium">Scanner un QR Code</h3>
             <p className="mt-2 text-sm text-muted-foreground">
               Positionnez l'appareil photo sur le QR code de la boutique pour enregistrer votre visite.
+              <br />
+              <span className="text-xs text-bisko-500 mt-1 block">
+                Seuls les QR codes des boutiques enregistrées seront reconnus.
+              </span>
             </p>
             <Button
               onClick={startScanner}

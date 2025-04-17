@@ -5,7 +5,8 @@ import QRScanner from '@/components/Scanner/QRScanner';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle, Store, MapPin, CalendarIcon } from 'lucide-react';
+import { CheckCircle, Store, MapPin, CalendarIcon, AlertCircle } from 'lucide-react';
+import { storesManager } from '@/utils/localStorageUtils';
 
 interface StoreData {
   storeId: string;
@@ -27,6 +28,7 @@ const Scanner: React.FC = () => {
   const [scannedData, setScannedData] = useState<StoreData | null>(null);
   const [locationData, setLocationData] = useState<LocationData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isInvalidQR, setIsInvalidQR] = useState(false);
   
   useEffect(() => {
     // Vérifier si l'utilisateur est connecté
@@ -40,6 +42,22 @@ const Scanner: React.FC = () => {
     try {
       // Parser les données QR
       const parsedData = JSON.parse(data) as StoreData;
+      
+      // Vérifier si le QR code correspond à une boutique enregistrée
+      const stores = storesManager.getAll();
+      const storeExists = stores.some(store => store.id === parsedData.storeId);
+      
+      if (!storeExists) {
+        console.log("QR code non reconnu:", parsedData);
+        setIsInvalidQR(true);
+        toast({
+          variant: "destructive",
+          title: "QR Code non reconnu",
+          description: "Cette boutique n'est pas enregistrée dans le système.",
+        });
+        return;
+      }
+      
       setScannedData(parsedData);
       
       // Enregistrer les données de localisation
@@ -52,6 +70,7 @@ const Scanner: React.FC = () => {
       }
       
       setIsScanned(true);
+      setIsInvalidQR(false);
       
       toast({
         title: "QR Code scanné avec succès",
@@ -59,6 +78,7 @@ const Scanner: React.FC = () => {
       });
     } catch (error) {
       console.error('Erreur lors du traitement des données QR:', error);
+      setIsInvalidQR(true);
       toast({
         variant: "destructive",
         title: "Erreur de scan",
@@ -104,6 +124,11 @@ const Scanner: React.FC = () => {
     setIsScanned(false);
     setScannedData(null);
     setLocationData(null);
+    setIsInvalidQR(false);
+  };
+  
+  const handleRetryScan = () => {
+    setIsInvalidQR(false);
   };
   
   return (
@@ -116,8 +141,32 @@ const Scanner: React.FC = () => {
         <p className="text-muted-foreground">Scannez le QR code d'une boutique pour enregistrer votre visite</p>
       </div>
       
-      {!isScanned ? (
+      {!isScanned && !isInvalidQR ? (
         <QRScanner onScanSuccess={handleScanSuccess} />
+      ) : isInvalidQR ? (
+        <Card className="glass-card animate-slide-up">
+          <CardContent className="p-6 space-y-6">
+            <div className="flex items-center justify-center">
+              <AlertCircle className="h-16 w-16 text-destructive mb-2" />
+            </div>
+            
+            <div className="text-center">
+              <h2 className="text-xl font-bold text-destructive">QR Code non reconnu</h2>
+              <p className="text-sm text-muted-foreground mt-3">
+                Ce QR code n'est pas associé à une boutique enregistrée dans le système.
+              </p>
+            </div>
+            
+            <div className="flex flex-col space-y-2 pt-4">
+              <Button 
+                onClick={handleRetryScan} 
+                className="w-full"
+              >
+                Réessayer le scan
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         <Card className="glass-card animate-slide-up">
           <CardContent className="p-6 space-y-6">
