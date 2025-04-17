@@ -83,8 +83,8 @@ const StoresMap: React.FC<StoresMapProps> = ({ stores, onStoreSelect }) => {
   return (
     <div className="rounded-lg overflow-hidden border border-gray-200">
       <MapContainer 
-        center={mapCenter}
-        zoom={mapZoom}
+        defaultCenter={mapCenter}
+        defaultZoom={mapZoom}
         style={{ height: '500px', width: '100%' }}
         zoomControl={true}
         attributionControl={true}
