@@ -83,8 +83,8 @@ const StoresMap: React.FC<StoresMapProps> = ({ stores, onStoreSelect }) => {
   return (
     <div className="rounded-lg overflow-hidden border border-gray-200">
       <MapContainer 
-        defaultCenter={mapCenter}
-        defaultZoom={mapZoom}
+        center={mapCenter}
+        zoom={mapZoom}
         style={{ height: '500px', width: '100%' }}
         zoomControl={true}
         attributionControl={true}
@@ -92,7 +92,7 @@ const StoresMap: React.FC<StoresMapProps> = ({ stores, onStoreSelect }) => {
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          attributionControl={true}
         />
         
         {stores.map((store) => (
