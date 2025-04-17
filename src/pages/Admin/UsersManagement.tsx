@@ -35,7 +35,8 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { Users, Search, Plus, Edit, Trash2, UserPlus } from 'lucide-react';
+import { Users, Search, Plus, Edit, Trash2, UserPlus, BarChart3, Eye } from 'lucide-react';
+import UserActivityDetails from '@/components/Admin/UserActivityDetails';
 
 interface User {
   id: string;
@@ -53,6 +54,8 @@ const UsersManagement: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
@@ -186,6 +189,11 @@ const UsersManagement: React.FC = () => {
         user.status === 'active' ? 'désactivé' : 'activé'
       } avec succès.`,
     });
+  };
+
+  const handleShowDetails = (user: User) => {
+    setSelectedUser(user);
+    setIsDetailsDialogOpen(true);
   };
 
   const formatDate = (dateString: string) => {
@@ -402,6 +410,16 @@ const UsersManagement: React.FC = () => {
                       <TableCell>{formatDate(user.lastActive)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          {user.role === 'commercial' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex items-center gap-1.5"
+                              onClick={() => handleShowDetails(user)}
+                            >
+                              <Eye className="h-4 w-4" /> Détails
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             size="sm"
@@ -436,6 +454,12 @@ const UsersManagement: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      <UserActivityDetails
+        open={isDetailsDialogOpen}
+        onOpenChange={setIsDetailsDialogOpen}
+        user={selectedUser}
+      />
     </div>
   );
 };
