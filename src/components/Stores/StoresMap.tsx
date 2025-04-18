@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import './StoresMap.css';
@@ -47,6 +47,17 @@ interface StoresMapProps {
   onStoreSelect?: (store: StoreData) => void;
 }
 
+// This component will set the map view once it's loaded
+const MapViewSetter = ({ center, zoom }: { center: [number, number], zoom: number }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    map.setView(center, zoom);
+  }, [center, zoom, map]);
+  
+  return null;
+};
+
 const StoresMap: React.FC<StoresMapProps> = ({ stores, onStoreSelect }) => {
   const [mapCenter, setMapCenter] = useState<[number, number]>([14.7167, -17.4677]); // Dakar
   const [mapZoom, setMapZoom] = useState<number>(12);
@@ -83,12 +94,12 @@ const StoresMap: React.FC<StoresMapProps> = ({ stores, onStoreSelect }) => {
   return (
     <div className="rounded-lg overflow-hidden border border-gray-200">
       <MapContainer 
-        center={mapCenter}
-        zoom={mapZoom}
         style={{ height: '500px', width: '100%' }}
         zoomControl={true}
         className="z-0"
       >
+        <MapViewSetter center={mapCenter} zoom={mapZoom} />
+        
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -98,7 +109,6 @@ const StoresMap: React.FC<StoresMapProps> = ({ stores, onStoreSelect }) => {
           <Marker
             key={store.id}
             position={[parseFloat(store.latitude), parseFloat(store.longitude)]}
-            icon={storeIcon}
             eventHandlers={{
               click: () => handleStoreClick(store),
             }}
