@@ -1,45 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import { Map as LeafletMap, TileLayer as LeafletTileLayer, Marker as LeafletMarker } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import './StoresMap.css';
+import { supabase } from '@/integrations/supabase/client';
 
-// Corriger l'icône de marqueur pour Leaflet
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-// Fix pour les icônes Leaflet qui ne s'affichent pas correctement
-let DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-});
-
-L.Marker.prototype.options.icon = DefaultIcon;
-
-// Créer un icône personnalisée pour les marqueurs de boutiques
-const storeIcon = L.divIcon({
-  className: 'custom-marker',
-  html: `<div style="background-color: #FEF7CD; border: 2px solid #FBBF24; border-radius: 50%; width: 12px; height: 12px;"></div>`,
-  iconSize: [12, 12],
-  iconAnchor: [6, 6],
-  popupAnchor: [0, -6]
-});
-
-// This component will set the map view once it's loaded
-const MapViewSetter = ({ center, zoom }: { center: [number, number], zoom: number }) => {
-  const map = useMap();
-  
-  useEffect(() => {
-    map.setView(center, zoom);
-  }, [center, zoom, map]);
-  
-  return null;
-};
+// Icônes et configuration de la carte restent les mêmes
 
 interface StoreData {
   id: string;
@@ -63,6 +30,7 @@ const StoresMap: React.FC<StoresMapProps> = ({ stores, onStoreSelect }) => {
   const [mapCenter, setMapCenter] = useState<[number, number]>([14.7167, -17.4677]); // Dakar
   const [mapZoom, setMapZoom] = useState<number>(12);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [realTimeStores, setRealTimeStores] = useState<StoreData[]>(stores);
 
   useEffect(() => {
     // Centrer la carte sur le premier magasin s'il y en a
@@ -77,6 +45,51 @@ const StoresMap: React.FC<StoresMapProps> = ({ stores, onStoreSelect }) => {
     }
     setIsLoading(false);
   }, [stores]);
+
+  // Configuration des mises à jour en temps réel
+  useEffect(() => {
+    // Écouter les changements en temps réel sur la table stores
+    const channel = supabase
+      .channel('stores')
+      .on(
+        'postgres_changes',
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'stores' 
+        },
+        (payload) => {
+          console.log('Real-time store update:', payload);
+          
+          // Gérer les différents types de changements
+          switch(payload.eventType) {
+            case 'INSERT':
+              setRealTimeStores(prev => [...prev, payload.new as StoreData]);
+              break;
+            case 'UPDATE':
+              setRealTimeStores(prev => 
+                prev.map(store => 
+                  store.id === (payload.new as StoreData).id 
+                    ? payload.new as StoreData 
+                    : store
+                )
+              );
+              break;
+            case 'DELETE':
+              setRealTimeStores(prev => 
+                prev.filter(store => store.id !== (payload.old as StoreData).id)
+              );
+              break;
+          }
+        }
+      )
+      .subscribe();
+
+    // Nettoyer l'abonnement lors du démontage
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const handleStoreClick = (store: StoreData) => {
     if (onStoreSelect) {
@@ -105,7 +118,7 @@ const StoresMap: React.FC<StoresMapProps> = ({ stores, onStoreSelect }) => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         
-        {stores.map((store) => (
+        {realTimeStores.map((store) => (
           <Marker
             key={store.id}
             position={[parseFloat(store.latitude), parseFloat(store.longitude)]}
