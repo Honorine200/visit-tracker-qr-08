@@ -97,7 +97,7 @@ const StoresMap: React.FC<StoresMapProps> = ({ stores, onStoreSelect }) => {
   return (
     <div className="rounded-lg overflow-hidden border border-gray-200">
       <MapContainer 
-        defaultCenter={defaultCenter}
+        center={defaultCenter}
         zoom={mapZoom}
         style={{ height: '500px', width: '100%' }}
         zoomControl
@@ -109,6 +109,7 @@ const StoresMap: React.FC<StoresMapProps> = ({ stores, onStoreSelect }) => {
           <Marker
             key={store.id}
             position={[parseFloat(store.latitude), parseFloat(store.longitude)]}
+            icon={storeIcon}
             eventHandlers={{
               click: () => handleStoreClick(store),
             }}
