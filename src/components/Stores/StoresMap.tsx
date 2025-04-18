@@ -1,12 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import './StoresMap.css';
 import { supabase } from '@/integrations/supabase/client';
 
-// Icônes et configuration de la carte restent les mêmes
+// Configuration des icônes Leaflet
+const storeIcon = L.icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
 
 interface StoreData {
   id: string;
@@ -27,67 +35,48 @@ interface StoresMapProps {
 }
 
 const StoresMap: React.FC<StoresMapProps> = ({ stores, onStoreSelect }) => {
-  const [mapCenter, setMapCenter] = useState<[number, number]>([14.7167, -17.4677]); // Dakar
-  const [mapZoom, setMapZoom] = useState<number>(12);
+  const [mapZoom] = useState<number>(12);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [realTimeStores, setRealTimeStores] = useState<StoreData[]>(stores);
+  const defaultCenter: [number, number] = [14.7167, -17.4677]; // Dakar
 
   useEffect(() => {
-    // Centrer la carte sur le premier magasin s'il y en a
-    if (stores.length > 0) {
-      const firstStore = stores[0];
-      if (firstStore.latitude && firstStore.longitude) {
-        setMapCenter([
-          parseFloat(firstStore.latitude),
-          parseFloat(firstStore.longitude)
-        ]);
-      }
-    }
+    setRealTimeStores(stores);
     setIsLoading(false);
   }, [stores]);
 
   // Configuration des mises à jour en temps réel
   useEffect(() => {
-    // Écouter les changements en temps réel sur la table stores
-    const channel = supabase
-      .channel('stores')
-      .on(
-        'postgres_changes',
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'stores' 
-        },
-        (payload) => {
-          console.log('Real-time store update:', payload);
-          
-          // Gérer les différents types de changements
-          switch(payload.eventType) {
-            case 'INSERT':
-              setRealTimeStores(prev => [...prev, payload.new as StoreData]);
-              break;
-            case 'UPDATE':
-              setRealTimeStores(prev => 
-                prev.map(store => 
-                  store.id === (payload.new as StoreData).id 
-                    ? payload.new as StoreData 
-                    : store
-                )
-              );
-              break;
-            case 'DELETE':
-              setRealTimeStores(prev => 
-                prev.filter(store => store.id !== (payload.old as StoreData).id)
-              );
-              break;
-          }
+    const channel = supabase.channel('stores-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'stores'
+      }, (payload) => {
+        console.log('Real-time store update:', payload);
+        
+        switch(payload.eventType) {
+          case 'INSERT':
+            setRealTimeStores(prev => [...prev, payload.new as StoreData]);
+            break;
+          case 'UPDATE':
+            setRealTimeStores(prev => 
+              prev.map(store => 
+                store.id === payload.new.id ? payload.new as StoreData : store
+              )
+            );
+            break;
+          case 'DELETE':
+            setRealTimeStores(prev => 
+              prev.filter(store => store.id !== payload.old.id)
+            );
+            break;
         }
-      )
+      })
       .subscribe();
 
-    // Nettoyer l'abonnement lors du démontage
     return () => {
-      supabase.removeChannel(channel);
+      channel.unsubscribe();
     };
   }, []);
 
@@ -108,21 +97,18 @@ const StoresMap: React.FC<StoresMapProps> = ({ stores, onStoreSelect }) => {
   return (
     <div className="rounded-lg overflow-hidden border border-gray-200">
       <MapContainer 
-        center={mapCenter}
+        defaultCenter={defaultCenter}
         zoom={mapZoom}
         style={{ height: '500px', width: '100%' }}
         zoomControl
         className="z-0"
       >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         
         {realTimeStores.map((store) => (
           <Marker
             key={store.id}
             position={[parseFloat(store.latitude), parseFloat(store.longitude)]}
-            icon={storeIcon}
             eventHandlers={{
               click: () => handleStoreClick(store),
             }}

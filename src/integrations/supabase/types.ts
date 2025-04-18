@@ -161,6 +161,102 @@ export type Database = {
         }
         Relationships: []
       }
+      sales: {
+        Row: {
+          agentid: string
+          amount: number
+          createdat: string
+          date: string
+          id: string
+          productid: string
+          quantity: number
+          storeid: string
+        }
+        Insert: {
+          agentid: string
+          amount: number
+          createdat?: string
+          date?: string
+          id?: string
+          productid: string
+          quantity: number
+          storeid: string
+        }
+        Update: {
+          agentid?: string
+          amount?: number
+          createdat?: string
+          date?: string
+          id?: string
+          productid?: string
+          quantity?: number
+          storeid?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_productid_fkey"
+            columns: ["productid"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_storeid_fkey"
+            columns: ["storeid"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stores: {
+        Row: {
+          address: string
+          contactname: string | null
+          createdat: string
+          email: string | null
+          id: string
+          latitude: string
+          longitude: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updatedat: string
+          userid: string | null
+          zone: string
+        }
+        Insert: {
+          address: string
+          contactname?: string | null
+          createdat?: string
+          email?: string | null
+          id?: string
+          latitude: string
+          longitude: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updatedat?: string
+          userid?: string | null
+          zone?: string
+        }
+        Update: {
+          address?: string
+          contactname?: string | null
+          createdat?: string
+          email?: string | null
+          id?: string
+          latitude?: string
+          longitude?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updatedat?: string
+          userid?: string | null
+          zone?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           avatar_url: string | null
@@ -184,6 +280,53 @@ export type Database = {
           role?: string
         }
         Relationships: []
+      }
+      visits: {
+        Row: {
+          agentid: string
+          agentname: string
+          createdat: string
+          date: string
+          id: string
+          notes: string | null
+          status: string
+          storeid: string
+          storename: string
+          updatedat: string
+        }
+        Insert: {
+          agentid: string
+          agentname: string
+          createdat?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          storeid: string
+          storename: string
+          updatedat?: string
+        }
+        Update: {
+          agentid?: string
+          agentname?: string
+          createdat?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          storeid?: string
+          storename?: string
+          updatedat?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visits_storeid_fkey"
+            columns: ["storeid"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
