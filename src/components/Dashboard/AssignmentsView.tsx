@@ -1,13 +1,13 @@
 
 import React, { useEffect, useState } from 'react';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { CalendarCheck2, Store } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { getCurrentUser } from '@/utils/authUtils';
+import { Calendar, MapPin, Store } from 'lucide-react';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 interface Assignment {
   id: string;
@@ -17,84 +17,93 @@ interface Assignment {
   end_date: string;
   status: string;
   notes?: string;
-  stores?: any[];
+}
+
+interface Store {
+  id: string;
+  name: string;
+  address: string;
 }
 
 const AssignmentsView = () => {
+  const navigate = useNavigate();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [stores, setStores] = useState<any[]>([]);
-  
+  const [stores, setStores] = useState<Record<string, Store>>({});
+  const [loading, setLoading] = useState(true);
   const currentUser = getCurrentUser();
-  const userId = currentUser?.id;
-
+  
   useEffect(() => {
-    if (userId) {
+    if (currentUser) {
       fetchAssignments();
       fetchStores();
     }
-  }, [userId]);
+  }, [currentUser]);
 
   const fetchAssignments = async () => {
+    if (!currentUser) return;
+    
     try {
-      // Simuler un délai de chargement
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const { data, error } = supabase
+      // Fetch assignments for the current user based on their ID in usersManager
+      const { data, error } = await supabase
         .from('visit_assignments')
-        .select();
+        .select('*')
+        .eq('commercial_id', currentUser.email); // Assuming the email is stored as the ID
       
       if (error) throw error;
       
-      // Filtrer les assignations pour le commercial connecté
-      const filteredAssignments = (data || []).filter(
-        (a: any) => a.commercial_id === userId
-      );
-      
-      setAssignments(filteredAssignments);
+      setAssignments(data || []);
+      console.log('Assignments loaded:', data);
     } catch (error) {
-      console.error('Erreur lors du chargement des assignations:', error);
+      console.error('Error fetching assignments:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
-  
+
   const fetchStores = async () => {
     try {
-      const { data, error } = supabase
+      const { data, error } = await supabase
         .from('stores')
-        .select();
-        
+        .select('id, name, address');
+      
       if (error) throw error;
-      setStores(data || []);
+      
+      const storeMap: Record<string, Store> = {};
+      (data || []).forEach(store => {
+        storeMap[store.id] = store;
+      });
+      
+      setStores(storeMap);
     } catch (error) {
-      console.error('Erreur lors du chargement des boutiques:', error);
+      console.error('Error fetching stores:', error);
     }
   };
-  
-  // Associer les détails des boutiques aux assignations
-  const assignmentsWithStoreDetails = assignments.map(assignment => {
-    const storeDetails = (assignment.store_ids || []).map(storeId => {
-      return stores.find(store => store.id === storeId);
-    }).filter(Boolean);
-    
-    return {
-      ...assignment,
-      stores: storeDetails
-    };
-  });
 
-  if (isLoading) {
+  if (loading) {
     return (
       <Card>
         <CardHeader>
-          <Skeleton className="h-6 w-64 mb-2" />
-          <Skeleton className="h-4 w-48" />
+          <CardTitle>Mes Assignations de Visites</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
+          <div className="flex justify-center py-10">
+            <div className="w-8 h-8 border-4 border-t-bisko-500 border-bisko-200 rounded-full animate-spin"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (assignments.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Mes Assignations de Visites</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <Calendar className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
+            <p>Aucune assignation de visite pour le moment</p>
           </div>
         </CardContent>
       </Card>
@@ -104,65 +113,61 @@ const AssignmentsView = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl flex items-center gap-2">
-          <CalendarCheck2 className="h-5 w-5 text-bisko-600" /> Mes visites assignées
-        </CardTitle>
-        <CardDescription>
-          Consultez vos visites à effectuer
-        </CardDescription>
+        <CardTitle>Mes Assignations de Visites</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {assignmentsWithStoreDetails.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <CalendarCheck2 className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-              <p>Aucune assignation de visite pour le moment</p>
-            </div>
-          ) : (
-            assignmentsWithStoreDetails.map(assignment => (
-              <div 
-                key={assignment.id} 
-                className="border rounded-lg p-4 hover:border-bisko-300 transition-colors"
-              >
-                <div className="flex flex-col md:flex-row justify-between mb-3">
-                  <div>
-                    <h3 className="font-medium">Période de visite</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Du {format(new Date(assignment.start_date), 'PP', { locale: fr })} au{' '}
-                      {format(new Date(assignment.end_date), 'PP', { locale: fr })}
-                    </p>
-                  </div>
-                  <Badge 
-                    variant={assignment.status === 'completed' ? "success" : "outline"}
-                    className="mt-2 md:mt-0 self-start"
-                  >
-                    {assignment.status === 'completed' ? 'Terminée' : 'En cours'}
-                  </Badge>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium flex items-center gap-1 mb-2">
-                    <Store className="h-4 w-4" /> Boutiques à visiter ({assignment.stores?.length || 0})
-                  </h4>
-                  <div className="space-y-2">
-                    {(assignment.stores || []).map(store => (
-                      <div key={store.id} className="text-sm bg-gray-50 dark:bg-gray-800 rounded p-2">
-                        <div className="font-medium">{store.name}</div>
-                        <div className="text-muted-foreground text-xs">{store.address}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {assignment.notes && (
-                  <div className="mt-3 border-t pt-2">
-                    <h4 className="font-medium mb-1">Notes</h4>
-                    <p className="text-sm text-muted-foreground">{assignment.notes}</p>
-                  </div>
-                )}
+          {assignments.map((assignment) => (
+            <div key={assignment.id} className="border rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <span className="font-medium">
+                  Du {format(new Date(assignment.start_date), 'PP', { locale: fr })} au{' '}
+                  {format(new Date(assignment.end_date), 'PP', { locale: fr })}
+                </span>
               </div>
-            ))
-          )}
+              
+              <div className="mb-3">
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                  assignment.status === 'completed' 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {assignment.status === 'completed' ? 'Terminée' : 'En cours'}
+                </span>
+              </div>
+              
+              {assignment.notes && (
+                <div className="mb-3 text-sm text-muted-foreground">
+                  <p>{assignment.notes}</p>
+                </div>
+              )}
+              
+              <div className="space-y-2 mt-4">
+                <h4 className="text-sm font-medium flex items-center gap-1">
+                  <Store className="w-4 h-4" /> Boutiques à visiter:
+                </h4>
+                <div className="grid gap-2">
+                  {assignment.store_ids.map((storeId) => (
+                    <div key={storeId} className="bg-muted p-2 rounded text-sm">
+                      <div className="font-medium">{stores[storeId]?.name || 'Boutique inconnue'}</div>
+                      {stores[storeId]?.address && (
+                        <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                          <MapPin className="w-3 h-3" /> {stores[storeId].address}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="mt-4">
+                <Button variant="outline" onClick={() => navigate('/visits')} className="w-full">
+                  Gérer mes visites
+                </Button>
+              </div>
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>

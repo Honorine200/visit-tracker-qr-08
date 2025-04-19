@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { usersManager, User } from '@/utils/usersUtils';
 
 interface Commercial {
   id: string;
@@ -36,25 +37,28 @@ const CreateAssignmentDialog = () => {
 
   const fetchCommercials = async () => {
     try {
-      const { data: userRoles } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'commercial');
-
-      if (userRoles) {
-        const userIds = userRoles.map(role => role.user_id);
-        const { data: users } = await supabase
-          .from('users')
-          .select('id, full_name')
-          .in('id', userIds);
-
-        setCommercials(users?.map(user => ({
-          id: user.id,
-          name: user.full_name
-        })) || []);
-      }
+      // Get all users from local storage
+      const allUsers = usersManager.getAllUsers();
+      
+      // Filter for commercial users only
+      const commercialUsers = allUsers.filter(user => user.role === 'commercial' && user.status === 'active');
+      
+      // Map them to the format needed for the dropdown
+      const mappedCommercials = commercialUsers.map(user => ({
+        id: user.id,
+        name: user.name
+      }));
+      
+      setCommercials(mappedCommercials);
+      
+      console.log('Commercials loaded:', mappedCommercials);
     } catch (error) {
       console.error('Error fetching commercials:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de charger la liste des commerciaux."
+      });
     }
   };
 
@@ -66,6 +70,11 @@ const CreateAssignmentDialog = () => {
       setStores(data || []);
     } catch (error) {
       console.error('Error fetching stores:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de charger la liste des boutiques."
+      });
     }
   };
 
@@ -140,11 +149,15 @@ const CreateAssignmentDialog = () => {
               required
             >
               <option value="">Sélectionner un commercial</option>
-              {commercials.map((commercial) => (
-                <option key={commercial.id} value={commercial.id}>
-                  {commercial.name}
-                </option>
-              ))}
+              {commercials.length > 0 ? (
+                commercials.map((commercial) => (
+                  <option key={commercial.id} value={commercial.id}>
+                    {commercial.name}
+                  </option>
+                ))
+              ) : (
+                <option value="" disabled>Aucun commercial disponible</option>
+              )}
             </select>
           </div>
 

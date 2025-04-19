@@ -4,6 +4,8 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Calendar, Store, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { getCurrentUser } from '@/utils/authUtils';
+import { usersManager } from '@/utils/usersUtils';
 import {
   Table,
   TableBody,
@@ -21,18 +23,26 @@ interface Assignment {
   end_date: string;
   status: string;
   notes?: string;
-  commercial: {
-    name: string;
-  };
 }
 
 const AssignmentsList = () => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [commercialNames, setCommercialNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchAssignments();
+    loadCommercialNames();
   }, []);
+
+  const loadCommercialNames = () => {
+    const allUsers = usersManager.getAllUsers();
+    const commercials = allUsers.reduce((acc: Record<string, string>, user) => {
+      acc[user.id] = user.name;
+      return acc;
+    }, {});
+    setCommercialNames(commercials);
+  };
 
   const fetchAssignments = async () => {
     try {
@@ -80,7 +90,7 @@ const AssignmentsList = () => {
                 <TableCell className="font-medium">
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4 text-muted-foreground" />
-                    {assignment.commercial?.name || 'Commercial inconnu'}
+                    {commercialNames[assignment.commercial_id] || 'Commercial inconnu'}
                   </div>
                 </TableCell>
                 <TableCell>

@@ -26,8 +26,8 @@ export class UsersManager {
   private initialize() {
     const users = this.usersManager.getAll();
     if (users.length === 0) {
-      // Créer l'utilisateur admin par défaut (ne sera pas dans la liste, mais toujours autorisé)
-      // Les commerciaux seront créés via l'interface d'administration
+      console.log('Initializing users database');
+      // Ne pas créer d'utilisateurs par défaut - ils seront créés via l'interface d'administration
     }
   }
   
@@ -76,6 +76,16 @@ export class UsersManager {
     // Vérifier si l'utilisateur existe et est actif
     const user = this.getUserByEmail(email);
     return user !== null && user.status === 'active';
+  }
+  
+  // Mise à jour de la dernière activité
+  updateLastActive(email: string): User | null {
+    const user = this.getUserByEmail(email);
+    if (!user) return null;
+    
+    return this.usersManager.update(user.id, {
+      lastActive: new Date().toISOString()
+    });
   }
 }
 
