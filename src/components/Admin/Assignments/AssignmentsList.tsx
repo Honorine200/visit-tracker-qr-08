@@ -38,10 +38,7 @@ const AssignmentsList = () => {
     try {
       const { data, error } = await supabase
         .from('visit_assignments')
-        .select(`
-          *,
-          commercial:commercial_id (name)
-        `);
+        .select();
 
       if (error) throw error;
       setAssignments(data || []);

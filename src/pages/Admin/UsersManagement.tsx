@@ -37,16 +37,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { Users, Search, Plus, Edit, Trash2, UserPlus, BarChart3, Eye } from 'lucide-react';
 import UserActivityDetails from '@/components/Admin/UserActivityDetails';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  zone: string;
-  status: 'active' | 'inactive';
-  lastActive: string;
-}
+import { User, usersManager } from '@/utils/usersUtils';
 
 const UsersManagement: React.FC = () => {
   const { toast } = useToast();
@@ -65,49 +56,18 @@ const UsersManagement: React.FC = () => {
   });
 
   useEffect(() => {
-    // Simuler le chargement des données
+    // Charger les utilisateurs
+    loadUsers();
+  }, []);
+
+  const loadUsers = () => {
+    setIsLoading(true);
     setTimeout(() => {
-      setUsers([
-        {
-          id: '1',
-          name: 'Admin Système',
-          email: 'admin@bisko.com',
-          role: 'admin',
-          zone: 'Tous',
-          status: 'active',
-          lastActive: '2023-11-25T10:30:00',
-        },
-        {
-          id: '2',
-          name: 'Amadou Sow',
-          email: 'amadou@bisko.com',
-          role: 'commercial',
-          zone: 'Dakar',
-          status: 'active',
-          lastActive: '2023-11-25T09:15:00',
-        },
-        {
-          id: '3',
-          name: 'Marie Diop',
-          email: 'marie@bisko.com',
-          role: 'commercial',
-          zone: 'Thiès',
-          status: 'active',
-          lastActive: '2023-11-24T16:45:00',
-        },
-        {
-          id: '4',
-          name: 'Ousmane Ndiaye',
-          email: 'ousmane@bisko.com',
-          role: 'commercial',
-          zone: 'Saint-Louis',
-          status: 'inactive',
-          lastActive: '2023-11-10T11:20:00',
-        },
-      ]);
+      const usersList = usersManager.getAllUsers();
+      setUsers(usersList);
       setIsLoading(false);
     }, 1000);
-  }, []);
+  };
 
   const filteredUsers = users.filter(
     (user) =>
@@ -126,19 +86,27 @@ const UsersManagement: React.FC = () => {
       });
       return;
     }
+    
+    // Vérifier si l'email existe déjà
+    if (usersManager.getUserByEmail(newUser.email)) {
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Cet email est déjà utilisé.',
+      });
+      return;
+    }
 
-    // Simuler l'ajout d'un utilisateur
-    const newUserData: User = {
-      id: `${users.length + 1}`,
+    // Créer un nouvel utilisateur
+    const createdUser = usersManager.createUser({
       name: newUser.name,
       email: newUser.email,
-      role: newUser.role,
+      role: newUser.role as 'admin' | 'commercial',
       zone: newUser.zone,
-      status: 'active',
-      lastActive: new Date().toISOString(),
-    };
+      status: 'active'
+    });
 
-    setUsers([...users, newUserData]);
+    setUsers([...users, createdUser]);
     setIsAddDialogOpen(false);
     setNewUser({
       name: '',
@@ -159,7 +127,9 @@ const UsersManagement: React.FC = () => {
     if (!user) return;
 
     // Simuler la suppression
+    usersManager.deleteUser(userId);
     setUsers(users.filter((u) => u.id !== userId));
+    
     toast({
       title: 'Utilisateur supprimé',
       description: `${user.name} a été supprimé avec succès.`,
@@ -167,28 +137,23 @@ const UsersManagement: React.FC = () => {
   };
 
   const handleStatusToggle = (userId: string) => {
-    setUsers(
-      users.map((user) =>
-        user.id === userId
-          ? {
-              ...user,
-              status: user.status === 'active' ? 'inactive' : 'active',
-            }
-          : user
-      )
-    );
-
     const user = users.find((u) => u.id === userId);
     if (!user) return;
-
-    toast({
-      title: `Utilisateur ${
-        user.status === 'active' ? 'désactivé' : 'activé'
-      }`,
-      description: `${user.name} a été ${
-        user.status === 'active' ? 'désactivé' : 'activé'
-      } avec succès.`,
+    
+    const newStatus = user.status === 'active' ? 'inactive' : 'active';
+    
+    const updatedUser = usersManager.updateUser(userId, {
+      status: newStatus as 'active' | 'inactive'
     });
+    
+    if (updatedUser) {
+      setUsers(users.map(u => u.id === userId ? updatedUser : u));
+      
+      toast({
+        title: `Utilisateur ${newStatus === 'active' ? 'activé' : 'désactivé'}`,
+        description: `${user.name} a été ${newStatus === 'active' ? 'activé' : 'désactivé'} avec succès.`,
+      });
+    }
   };
 
   const handleShowDetails = (user: User) => {

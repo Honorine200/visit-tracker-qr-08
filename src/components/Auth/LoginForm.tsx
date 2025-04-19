@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
+import { resetAppData } from '@/integrations/supabase/client';
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
@@ -19,33 +20,41 @@ const LoginForm: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Extraire le nom d'utilisateur de l'adresse Gmail
-    let userName = 'Utilisateur Démo';
-    let role = 'commercial'; // Rôle par défaut
-    
     // Vérifier si c'est l'admin qui se connecte
     if (email.toLowerCase() === 'admin@bisko.com') {
-      userName = 'Admin Système';
-      role = 'admin';
-    } else if (email.endsWith('@gmail.com')) {
-      // Prend la partie avant @gmail.com et remplace les points par des espaces
-      // puis met en majuscule la première lettre de chaque mot
-      userName = email.split('@')[0]
-        .replace(/\./g, ' ')
-        .split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
+      // L'admin peut toujours se connecter
+      loginUser('Admin Système', email, 'admin');
+    } else {
+      // Pour les autres utilisateurs, vérifier s'ils existent dans la liste des utilisateurs autorisés
+      const usersManager = new LocalStorageManager('users');
+      const users = usersManager.getAll();
+      
+      const user = users.find((u: any) => 
+        u.email.toLowerCase() === email.toLowerCase() && 
+        u.status === 'active'
+      );
+      
+      if (user) {
+        loginUser(user.name, email, user.role, user.zone);
+      } else {
+        setIsLoading(false);
+        toast({
+          variant: "destructive",
+          title: "Connexion échouée",
+          description: "Cet utilisateur n'existe pas ou n'est pas autorisé à se connecter."
+        });
+      }
     }
-    
-    // Simuler une connexion
+  };
+  
+  const loginUser = (userName: string, userEmail: string, role: string, zone: string = 'Tous') => {
     setTimeout(() => {
-      // Pour l'instant, on accepte n'importe quelles informations
       localStorage.setItem('user', JSON.stringify({ 
-        id: '1',
+        id: role === 'admin' ? 'admin-id' : Date.now().toString(),
         name: userName,
-        email: email,
+        email: userEmail,
         role: role,
-        zone: role === 'admin' ? 'Tous' : 'Dakar'
+        zone: zone
       }));
       
       setIsLoading(false);
@@ -55,7 +64,7 @@ const LoginForm: React.FC = () => {
       });
       
       navigate(role === 'admin' ? '/admin' : '/dashboard');
-    }, 1500);
+    }, 1000);
   };
   
   return (
@@ -127,5 +136,8 @@ const LoginForm: React.FC = () => {
     </Card>
   );
 };
+
+// Importer LocalStorageManager ici pour éviter les erreurs circulaires
+import { LocalStorageManager } from '@/utils/localStorageUtils';
 
 export default LoginForm;

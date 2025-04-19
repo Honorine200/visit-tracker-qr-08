@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Card,
@@ -23,7 +22,21 @@ import {
   RotateCcw,
   Download,
   Upload,
+  AlertTriangle,
+  Trash2
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { resetAppData } from '@/integrations/supabase/client';
 
 const AdminSettings: React.FC = () => {
   const { toast } = useToast();
@@ -41,6 +54,7 @@ const AdminSettings: React.FC = () => {
     defaultLanguage: 'fr',
   });
   const [loading, setLoading] = useState(false);
+  const [resettingData, setResettingData] = useState(false);
 
   const handleSave = () => {
     setLoading(true);
@@ -96,6 +110,30 @@ const AdminSettings: React.FC = () => {
       title: 'Paramètres réinitialisés',
       description: 'Les paramètres ont été réinitialisés aux valeurs par défaut.',
     });
+  };
+
+  const handleResetAllData = () => {
+    setResettingData(true);
+    
+    // Réinitialiser toutes les données
+    setTimeout(() => {
+      try {
+        resetAppData();
+        toast({
+          title: 'Données réinitialisées',
+          description: 'Toutes les données de l\'application ont été réinitialisées avec succès.',
+        });
+      } catch (error) {
+        console.error('Erreur lors de la réinitialisation des données:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Erreur',
+          description: 'Une erreur est survenue lors de la réinitialisation des données.',
+        });
+      } finally {
+        setResettingData(false);
+      }
+    }, 1500);
   };
 
   const handleBackup = () => {
@@ -293,6 +331,43 @@ const AdminSettings: React.FC = () => {
                     <Upload className="h-4 w-4" />
                     Importer des données
                   </Button>
+                  
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" className="flex items-center gap-2 mt-4 md:mt-0">
+                        <Trash2 className="h-4 w-4" />
+                        Réinitialiser toutes les données
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                          <AlertTriangle className="h-5 w-5 text-red-500" /> Réinitialisation des données
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Cette action va supprimer toutes les données de l'application et les réinitialiser à zéro.
+                          Cette action est irréversible.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={handleResetAllData}
+                          className="bg-red-500 hover:bg-red-600"
+                          disabled={resettingData}
+                        >
+                          {resettingData ? (
+                            <>
+                              <div className="h-4 w-4 rounded-full border-2 border-current border-r-transparent animate-spin mr-2"></div>
+                              Réinitialisation...
+                            </>
+                          ) : (
+                            'Confirmer la réinitialisation'
+                          )}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             </div>
