@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardView from '@/components/Dashboard/DashboardView';
+import AssignmentsView from '@/components/Dashboard/AssignmentsView';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -14,7 +15,12 @@ const Dashboard: React.FC = () => {
     }
   }, [navigate]);
   
-  return <DashboardView />;
+  return (
+    <div className="space-y-6">
+      <DashboardView />
+      <AssignmentsView />
+    </div>
+  );
 };
 
 export default Dashboard;

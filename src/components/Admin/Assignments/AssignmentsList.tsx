@@ -1,10 +1,17 @@
 
 import React, { useEffect, useState } from 'react';
-import { CalendarDays, Store, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Calendar, Store, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface Assignment {
   id: string;
@@ -17,9 +24,6 @@ interface Assignment {
   commercial: {
     name: string;
   };
-  stores: {
-    name: string;
-  }[];
 }
 
 const AssignmentsList = () => {
@@ -37,11 +41,9 @@ const AssignmentsList = () => {
         .select(`
           *,
           commercial:commercial_id (name)
-        `)
-        .order('start_date', { ascending: true });
+        `);
 
       if (error) throw error;
-
       setAssignments(data || []);
     } catch (error) {
       console.error('Error fetching assignments:', error);
@@ -58,53 +60,58 @@ const AssignmentsList = () => {
     );
   }
 
-  if (assignments.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        <Store className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
-        <p>Aucune assignation de visite pour le moment</p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
-      {assignments.map((assignment) => (
-        <Card key={assignment.id} className="p-4">
-          <div className="space-y-4">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-bisko-500" />
-                  <span className="font-medium">
+      {assignments.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <Calendar className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
+          <p>Aucune assignation de visite pour le moment</p>
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Commercial</TableHead>
+              <TableHead>Période</TableHead>
+              <TableHead>Statut</TableHead>
+              <TableHead>Notes</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {assignments.map((assignment) => (
+              <TableRow key={assignment.id}>
+                <TableCell className="font-medium">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-muted-foreground" />
                     {assignment.commercial?.name || 'Commercial inconnu'}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                    <span>
+                      Du {format(new Date(assignment.start_date), 'PP', { locale: fr })} au{' '}
+                      {format(new Date(assignment.end_date), 'PP', { locale: fr })}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    assignment.status === 'completed' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {assignment.status === 'completed' ? 'Terminée' : 'En cours'}
                   </span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CalendarDays className="w-4 h-4" />
-                  <span>
-                    Du {format(new Date(assignment.start_date), 'PP', { locale: fr })} au{' '}
-                    {format(new Date(assignment.end_date), 'PP', { locale: fr })}
-                  </span>
-                </div>
-              </div>
-              <div className={`px-2 py-1 text-xs rounded-full ${
-                assignment.status === 'completed' 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-yellow-100 text-yellow-800'
-              }`}>
-                {assignment.status === 'completed' ? 'Terminé' : 'En cours'}
-              </div>
-            </div>
-
-            {assignment.notes && (
-              <p className="text-sm text-muted-foreground">
-                {assignment.notes}
-              </p>
-            )}
-          </div>
-        </Card>
-      ))}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {assignment.notes || '-'}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
     </div>
   );
 };
