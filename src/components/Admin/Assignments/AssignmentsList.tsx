@@ -4,7 +4,6 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Calendar, Store, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { getCurrentUser } from '@/utils/authUtils';
 import { usersManager } from '@/utils/usersUtils';
 import {
   Table,
@@ -33,6 +32,17 @@ const AssignmentsList = () => {
   useEffect(() => {
     fetchAssignments();
     loadCommercialNames();
+    
+    // Listen for storage events to reload data
+    const handleStorageChange = () => {
+      fetchAssignments();
+      loadCommercialNames();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const loadCommercialNames = () => {
@@ -51,6 +61,7 @@ const AssignmentsList = () => {
         .select();
 
       if (error) throw error;
+      console.log('Assignments loaded:', data);
       setAssignments(data || []);
     } catch (error) {
       console.error('Error fetching assignments:', error);

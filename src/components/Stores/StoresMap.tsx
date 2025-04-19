@@ -1,153 +1,156 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
-import { Store, MapPin } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import 'leaflet/dist/leaflet.css';
 import './StoresMap.css';
+import { supabase } from '@/integrations/supabase/client';
+import L from 'leaflet';
+import { getCurrentUser } from '@/utils/authUtils';
 
-// Define marker icon
-const storeIcon = new L.Icon({
-  iconUrl: '/placeholder.svg',
-  iconSize: [25, 25],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
+// Fix Leaflet icon issue
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-interface StoreLocation {
+interface StoreType {
   id: string;
   name: string;
   address: string;
-  position: [number, number];
+  latitude: string;
+  longitude: string;
+  zone: string;
+  contactname?: string;
+  phone?: string;
+  email?: string;
+  notes?: string;
 }
 
-const StoresMap: React.FC = () => {
-  const [stores, setStores] = useState<StoreLocation[]>([]);
-  const [mapPosition, setMapPosition] = useState<[number, number]>([14.7167, -17.4677]); // Default: Dakar
-  const [selected, setSelected] = useState<string | null>(null);
-  
-  useEffect(() => {
-    // Simuler le chargement de données
-    setTimeout(() => {
-      // Données factices pour démonstration
-      const mockStores: StoreLocation[] = [
-        {
-          id: "store1",
-          name: "Grand Marché de Dakar",
-          address: "123 Rue Centrale, Dakar",
-          position: [14.716, -17.438]
-        },
-        {
-          id: "store2",
-          name: "Supermarché Sahel",
-          address: "45 Avenue des Nations, Dakar",
-          position: [14.722, -17.445]
-        },
-        {
-          id: "store3",
-          name: "Boutique ABC",
-          address: "78 Rue du Commerce, Dakar",
-          position: [14.712, -17.456]
-        },
-        {
-          id: "store4",
-          name: "Mini Market Express",
-          address: "15 Boulevard Maritime, Dakar",
-          position: [14.705, -17.465]
-        }
-      ];
-      
-      setStores(mockStores);
-    }, 1000);
-  }, []);
+const StoresMap: React.FC<{ stores?: StoreType[] }> = ({ stores: propStores }) => {
+  const [stores, setStores] = useState<StoreType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [center, setCenter] = useState<[number, number]>([14.7167, -17.4677]); // Dakar, Senegal
+  const currentUser = getCurrentUser();
 
-  const handleSelectStore = (storeId: string) => {
-    const store = stores.find(s => s.id === storeId);
-    if (store) {
-      setSelected(storeId);
-      setMapPosition(store.position);
+  useEffect(() => {
+    if (propStores) {
+      setStores(propStores);
+      setLoading(false);
+      
+      // If there are stores, center the map on the first one
+      if (propStores.length > 0 && propStores[0].latitude && propStores[0].longitude) {
+        try {
+          const lat = parseFloat(propStores[0].latitude);
+          const lng = parseFloat(propStores[0].longitude);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            setCenter([lat, lng]);
+          }
+        } catch (e) {
+          console.error('Error parsing coordinates:', e);
+        }
+      }
+    } else {
+      fetchStores();
+    }
+  }, [propStores]);
+
+  const fetchStores = async () => {
+    try {
+      let query = supabase.from('stores').select('*');
+      
+      // If user is a commercial with a specific zone, filter the stores by zone
+      if (currentUser && currentUser.role === 'commercial' && currentUser.zone) {
+        query = query.eq('zone', currentUser.zone);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setStores(data);
+        
+        // Center map on first store
+        if (data[0].latitude && data[0].longitude) {
+          try {
+            const lat = parseFloat(data[0].latitude);
+            const lng = parseFloat(data[0].longitude);
+            if (!isNaN(lat) && !isNaN(lng)) {
+              setCenter([lat, lng]);
+            }
+          } catch (e) {
+            console.error('Error parsing coordinates:', e);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching stores:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleMarkerClick = (storeId: string) => {
-    setSelected(storeId);
-  };
-
-  if (stores.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-muted-foreground" /> Carte des boutiques
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="h-[400px] flex items-center justify-center">
-          <div className="text-center">
-            <Store className="h-10 w-10 mx-auto text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">Chargement de la carte...</h3>
-          </div>
-        </CardContent>
-      </Card>
-    );
+  if (loading) {
+    return <div className="flex justify-center items-center h-64">
+      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-bisko-500"></div>
+    </div>;
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MapPin className="h-5 w-5 text-muted-foreground" /> Carte des boutiques
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="mb-4 flex flex-wrap gap-2">
-          {stores.map((store) => (
-            <button
-              key={store.id}
-              onClick={() => handleSelectStore(store.id)}
-              className={`text-xs px-2 py-1 rounded-full border transition-colors ${
-                selected === store.id
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-muted border-muted-foreground/20 hover:border-muted-foreground/30'
-              }`}
-            >
-              {store.name}
-            </button>
-          ))}
-        </div>
+    <div className="stores-map-container">
+      <MapContainer
+        center={center}
+        zoom={13}
+        style={{ height: '500px', width: '100%' }}
+        zoomControl={true}
+        className="rounded-md border border-gray-200 shadow-sm"
+      >
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        />
         
-        <div className="h-[400px] rounded-md overflow-hidden border">
-          <MapContainer
-            center={mapPosition}
-            zoom={13}
-            style={{ height: '100%', width: '100%' }}
-            zoomControl={true}
-            className="z-0"
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            
-            {stores.map((store) => (
-              <Marker
-                key={store.id}
-                position={store.position}
-                eventHandlers={{
-                  click: () => handleMarkerClick(store.id),
-                }}
-              >
-                <Popup>
-                  <div className="p-1">
-                    <h3 className="font-medium">{store.name}</h3>
-                    <p className="text-xs text-muted-foreground">{store.address}</p>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-          </MapContainer>
-        </div>
-      </CardContent>
-    </Card>
+        {stores.map((store) => {
+          // Parse coordinates (handle potential errors)
+          let position: [number, number] | null = null;
+          try {
+            const lat = parseFloat(store.latitude);
+            const lng = parseFloat(store.longitude);
+            if (!isNaN(lat) && !isNaN(lng)) {
+              position = [lat, lng];
+            }
+          } catch (e) {
+            console.error(`Error parsing coordinates for store ${store.id}:`, e);
+          }
+          
+          return position ? (
+            <Marker 
+              key={store.id} 
+              position={position}
+            >
+              <Popup>
+                <div className="store-popup">
+                  <h3 className="font-bold">{store.name}</h3>
+                  <p className="text-sm text-gray-600">{store.address}</p>
+                  {store.contactname && (
+                    <p className="text-sm mt-2">
+                      <strong>Contact:</strong> {store.contactname}
+                    </p>
+                  )}
+                  {store.phone && (
+                    <p className="text-sm">
+                      <strong>Tel:</strong> {store.phone}
+                    </p>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          ) : null;
+        })}
+      </MapContainer>
+    </div>
   );
 };
 

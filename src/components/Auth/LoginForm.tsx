@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from '@/integrations/supabase/client';
+import { LogIn, Loader2 } from 'lucide-react';
 import { usersManager } from '@/utils/usersUtils';
 
 const LoginForm = () => {
@@ -51,6 +51,9 @@ const LoginForm = () => {
           role: user.role,
           zone: user.zone
         }));
+        
+        // Update last active time
+        usersManager.updateLastActive(email);
       } else if (isAdmin) {
         localStorage.setItem('user', JSON.stringify({
           email: 'admin@bisko.com',
@@ -83,10 +86,10 @@ const LoginForm = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Bienvenue sur Bisko</h1>
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-bisko-600 dark:text-bisko-400">Bienvenue</h1>
         <p className="text-muted-foreground mt-2">
-          Connectez-vous pour accéder à votre tableau de bord
+          Connectez-vous pour accéder à votre espace
         </p>
       </div>
       
@@ -96,40 +99,58 @@ const LoginForm = () => {
         </div>
       )}
       
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className="text-sm font-medium">Email</Label>
           <Input 
             id="email" 
             type="email" 
             placeholder="votre@email.com" 
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            className="h-11"
             required 
           />
         </div>
         
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password">Mot de passe</Label>
+            <Label htmlFor="password" className="text-sm font-medium">Mot de passe</Label>
           </div>
           <Input 
             id="password" 
-            type="password" 
+            type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            className="h-11"
             required 
           />
         </div>
 
         <Button 
           type="submit" 
-          className="w-full" 
+          className="w-full h-11 mt-6 flex items-center justify-center gap-2" 
           disabled={loading}
         >
-          {loading ? 'Connexion en cours...' : 'Se connecter'}
+          {loading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Connexion en cours...
+            </>
+          ) : (
+            <>
+              <LogIn className="h-4 w-4" />
+              Se connecter
+            </>
+          )}
         </Button>
       </form>
+      
+      <div className="text-center text-sm text-muted-foreground">
+        <p>
+          Accès démonstration: <span className="font-semibold">admin@bisko.com</span>
+        </p>
+      </div>
     </div>
   );
 };

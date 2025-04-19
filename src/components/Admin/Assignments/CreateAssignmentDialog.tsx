@@ -6,7 +6,7 @@ import { Plus } from 'lucide-react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from "@/components/ui/use-toast";
 import { usersManager, User } from '@/utils/usersUtils';
 
 interface Commercial {
@@ -31,11 +31,11 @@ const CreateAssignmentDialog = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchCommercials();
+    loadCommercials();
     fetchStores();
-  }, []);
+  }, [isOpen]);
 
-  const fetchCommercials = async () => {
+  const loadCommercials = () => {
     try {
       // Get all users from local storage
       const allUsers = usersManager.getAllUsers();
@@ -53,7 +53,7 @@ const CreateAssignmentDialog = () => {
       
       console.log('Commercials loaded:', mappedCommercials);
     } catch (error) {
-      console.error('Error fetching commercials:', error);
+      console.error('Error loading commercials:', error);
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -91,6 +91,7 @@ const CreateAssignmentDialog = () => {
     }
 
     try {
+      // Create the assignment
       const { error } = await supabase
         .from('visit_assignments')
         .insert({
@@ -99,7 +100,8 @@ const CreateAssignmentDialog = () => {
           start_date: startDate,
           end_date: endDate,
           notes,
-          created_by: (await supabase.auth.getUser()).data.user?.id
+          status: 'pending',
+          created_by: 'admin' // TODO: Use actual admin ID
         });
 
       if (error) throw error;
@@ -109,13 +111,16 @@ const CreateAssignmentDialog = () => {
         description: "L'assignation a été créée avec succès."
       });
 
+      // Close the dialog and reset form
       setIsOpen(false);
-      // Reset form
       setSelectedCommercial('');
       setSelectedStores([]);
       setStartDate('');
       setEndDate('');
       setNotes('');
+      
+      // Trigger window storage event to update other components
+      window.dispatchEvent(new Event('storage'));
     } catch (error) {
       console.error('Error creating assignment:', error);
       toast({
@@ -171,11 +176,15 @@ const CreateAssignmentDialog = () => {
               onChange={(e) => setSelectedStores(Array.from(e.target.selectedOptions, option => option.value))}
               required
             >
-              {stores.map((store) => (
-                <option key={store.id} value={store.id}>
-                  {store.name}
-                </option>
-              ))}
+              {stores.length > 0 ? (
+                stores.map((store) => (
+                  <option key={store.id} value={store.id}>
+                    {store.name}
+                  </option>
+                ))
+              ) : (
+                <option value="" disabled>Aucune boutique disponible</option>
+              )}
             </select>
           </div>
 

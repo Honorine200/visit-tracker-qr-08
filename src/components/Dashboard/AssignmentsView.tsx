@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { usersManager } from '@/utils/usersUtils';
 
 interface Assignment {
   id: string;
@@ -43,16 +44,28 @@ const AssignmentsView = () => {
     if (!currentUser) return;
     
     try {
+      // Get user ID from users manager
+      const userEmail = currentUser.email;
+      const user = usersManager.getUserByEmail(userEmail);
+      
+      if (!user) {
+        console.error('User not found in usersManager:', userEmail);
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Fetching assignments for user ID:', user.id);
+      
       // Fetch assignments for the current user based on their ID in usersManager
       const { data, error } = await supabase
         .from('visit_assignments')
         .select('*')
-        .eq('commercial_id', currentUser.email); // Assuming the email is stored as the ID
+        .eq('commercial_id', user.id);
       
       if (error) throw error;
       
+      console.log('Assignments fetched:', data);
       setAssignments(data || []);
-      console.log('Assignments loaded:', data);
     } catch (error) {
       console.error('Error fetching assignments:', error);
     } finally {
