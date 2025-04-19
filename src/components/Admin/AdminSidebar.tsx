@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -10,7 +9,8 @@ import {
   Settings, 
   FileText, 
   ArrowLeft,
-  Home
+  Home,
+  Calendar
 } from 'lucide-react';
 
 interface SidebarLinkProps {
@@ -45,6 +45,7 @@ const AdminSidebar: React.FC = () => {
     { to: "/admin", icon: <BarChart3 size={20} />, label: "Tableau de bord" },
     { to: "/admin/users", icon: <Users size={20} />, label: "Utilisateurs" },
     { to: "/admin/stores", icon: <Store size={20} />, label: "Boutiques" },
+    { to: "/admin/visits", icon: <Calendar size={20} />, label: "Assignation des visites" },
     { to: "/admin/products", icon: <Package size={20} />, label: "Produits" },
     { to: "/admin/reports", icon: <FileText size={20} />, label: "Rapports" },
     { to: "/admin/settings", icon: <Settings size={20} />, label: "Paramètres" },
